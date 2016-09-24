@@ -2,14 +2,14 @@
 
 I couldn't find a way to specify 'files' using the letter 'D'.
 
-## Requirements
+## Requirements for use
 
 1. That the "server" folder is a mountpoint, or a symlink, or you copy everything from the medium to it and back.
 2. That all clients have enough space for all the data in the system.
 3. That the medium is shared (SFTP) or essentially shared (drive you carry).
 4. That the medium can hold all the data you want to transfer at once.
 
-## Reasons
+## Reasons for writing
 
 1. Portable storage is not as cheap as local storage, so file-level delta synchronization is needed.
 2. The internet is slow, and you have to move between places anyway to cause the data to be transferred.
