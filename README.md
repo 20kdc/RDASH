@@ -8,6 +8,7 @@ I couldn't find a way to specify 'files' using the letter 'D'.
 2. That all clients have enough space for all the data in the system.
 3. That the medium is shared (SFTP) or essentially shared (drive you carry).
 4. That the medium can hold all the data you want to transfer at once.
+5. *That you trust everybody with access to the medium, since not much verification is performed.*
 
 ## Reasons for writing
 
