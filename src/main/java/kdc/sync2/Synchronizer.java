@@ -152,7 +152,9 @@ public class Synchronizer {
                     feedback.logNote("A valid deletion record cropped up, kill it.");
                     // It's dead.
                     res.delete();
-                    hosts.put(layout.hostname, new IndexEntry(baseGet.base, baseGet.name, bestDate, -1));
+                    // Make sure we have no record (deletion or otherwise) to fix Issue #1.
+                    // Propagation of deletion records is nice but it's also based on a flawed assumption which leads to them getting repropagated forever.
+                    hosts.remove(layout.hostname);
                 } else  {
                     File hostedFile = layout.getFile(bestHost, baseGet);
                     // Keep in mind that bestDate and bestGet are linked, but NOT bestHost.
@@ -226,20 +228,17 @@ public class Synchronizer {
         }
     }
 
+    // existingHosts is the global list of hosts in the world, hosts is the usual host->index for this file, bestDate == lastest version time.
     public static boolean getHostUpdate(HashSet<String> existingHosts, HashMap<String, IndexEntry> hosts, long bestDate, boolean mustExist) {
-        boolean hostUpdate = false;
-        // Does somebody not have the file?
+        // If everybody is supposed to have this record, does somebody not have it?
         if (mustExist)
             for (String s : existingHosts)
                 if (!hosts.containsKey(s))
-                    hostUpdate = true;
-        if (!hostUpdate) {
-            for (Map.Entry<String, IndexEntry> people : hosts.entrySet())
-                if (people.getValue().time < bestDate) {
-                    hostUpdate = true;
-                    break;
-                }
-        }
-        return hostUpdate;
+                    return true;
+        // Does anyone have an outdated record?
+        for (Map.Entry<String, IndexEntry> people : hosts.entrySet())
+            if (people.getValue().time < bestDate)
+                    return true;
+        return false;
     }
 }
