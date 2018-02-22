@@ -7,6 +7,12 @@
 package kdc.sync2;
 
 import java.io.File;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 
 /**
  * Abstracts away the various file paths involved.
@@ -50,6 +56,42 @@ public class ServerLayout {
             getIndex(hostname).delete();
             throw new RuntimeException("SYSTEM FAILURE (couldn't create dir.)");
         }
+    }
+
+    public String getCriticalFlag() {
+        File f = new File("sync2.crit.txt");
+        if (f.exists()) {
+            try {
+                FileInputStream fis = new FileInputStream(f);
+                BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
+                String r = br.readLine();
+                fis.close();
+                return r;
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
+        return null;
+    }
+
+    public void setCriticalFlag(IndexEntry flag) {
+        File f = new File("sync2.crit.txt");
+        if (flag == null) {
+            f.delete();
+        } else {
+            try {
+                FileOutputStream fos = new FileOutputStream(f);
+                PrintStream ps = new PrintStream(fos, false, "UTF-8");
+                ps.println(flag.base + flag.name);
+                ps.close();
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
+    }
+
+    public File getLocalTemp() {
+        return new File("sync2.temp.bin");
     }
 
     public File getLocalDir() {

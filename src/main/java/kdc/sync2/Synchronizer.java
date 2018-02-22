@@ -36,6 +36,9 @@ public class Synchronizer {
     // where "iwakura" is the folder to index
     public void runSynchronize(boolean noHost) throws IOException {
         feedback.handlingFile("init", 0d);
+        String critical = layout.getCriticalFlag();
+        if (critical != null)
+            throw new RuntimeException("SANITY CHECK : Pre-sync checks show that file " + critical + " is in an uncertain state due to sync failure.");
         doNotHost = noHost;
         didNotHost.clear();
         Index theOldDatabase = new Index();
@@ -168,7 +171,14 @@ public class Synchronizer {
                         feedback.doingTask("Downloading");
                         // We need to update to bestHost's version, if possible.
                         layout.ensureLocalFileParent(baseGet);
-                        Files.copy(hostedFile.toPath(), res.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        // Split this into two sections to reduce chance of accidental corruption.
+                        File temp = layout.getLocalTemp();
+                        Files.copy(hostedFile.toPath(), temp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        feedback.doingTask("Transferring");
+                        layout.setCriticalFlag(baseGet);
+                        Files.copy(temp.toPath(), res.toPath(), StandardCopyOption.REPLACE_EXISTING); // CRITICAL OPERATION
+                        layout.setCriticalFlag(null);
+                        temp.delete();
                         res.setLastModified(newIndex.convertStH(bestDate));
                         if (!hosts.containsKey(layout.hostname)) {
                             hosts.put(layout.hostname, new IndexEntry(baseGet.base, baseGet.name, bestDate, res.length()));
