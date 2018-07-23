@@ -26,7 +26,7 @@ public interface Operation {
                 o.execute(new OperationFeedback() {
                     @Override
                     public void showFeedback(String text, double operationProgress) {
-                        feedback.showFeedback(text, operationProgress / group.length);
+                        feedback.showFeedback(text, base + (operationProgress / group.length));
                     }
                 });
             }

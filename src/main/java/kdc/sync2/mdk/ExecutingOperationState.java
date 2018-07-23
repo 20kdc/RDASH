@@ -30,6 +30,7 @@ public class ExecutingOperationState implements HMRState.ResizableHMRState {
 
     @Override
     public Container createUI() {
+        final JLabel status = new JLabel("Starting the operations immediately.");
         final JProgressBar progress = new JProgressBar();
         progress.setMinimum(0);
         progress.setMaximum(1000);
@@ -40,6 +41,7 @@ public class ExecutingOperationState implements HMRState.ResizableHMRState {
                 op.execute(new Operation.OperationFeedback() {
                     @Override
                     public void showFeedback(String text, double operationProgress) {
+                        status.setText(text);
                         System.out.println(text + " " + ((int) (operationProgress * 100)) + "%");
                         progress.setValue((int) (operationProgress * 1000));
                     }
@@ -52,7 +54,7 @@ public class ExecutingOperationState implements HMRState.ResizableHMRState {
                 });
             }
         }.start();
-        return progress;
+        return new HMRSplitterLayout(status, progress, true, 1);
     }
 
     @Override

@@ -73,8 +73,7 @@ public class Main {
                 }
             };
             s.prepareSync(noHost, llo).execute(of);
-            for (Operation o : llo)
-                o.execute(of);
+            new Operation.GroupOperation(llo.toArray(new Operation[0])).execute(of);
         } else if (syncMode == 2) {
             HMRFrame frame = new HMRFrame();
             frame.reset(new RequestHostnameState(frame));
