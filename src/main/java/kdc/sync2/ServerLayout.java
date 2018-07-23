@@ -6,6 +6,8 @@
 
 package kdc.sync2;
 
+import kdc.sync2.IndexEntry;
+
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;

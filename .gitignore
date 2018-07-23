@@ -16,3 +16,5 @@
 !src/main/java/kdc/sync2
 !src/main/java/kdc/sync2/
 !src/main/java/kdc/sync2/*.java
+!src/main/java/kdc/sync2/*
+!src/main/java/kdc/sync2/*/*.java

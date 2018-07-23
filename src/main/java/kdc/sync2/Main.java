@@ -6,11 +6,20 @@
 
 package kdc.sync2;
 
+import kdc.sync2.hmr.HMRFrame;
+import kdc.sync2.mdk.RequestHostnameState;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
+/**
+ * Interface to the program.
+ * Here's the sub-packages, named arbitrarily:
+ *  hmr: Swing wrapper, protects mdk from horrific code
+ *  mdk: GUI-mode states, uses hmr
+ */
 public class Main {
     /*
      * I'd write notes for potential options here, but none are needed in theory.
@@ -35,6 +44,8 @@ public class Main {
                 noHost = true;
             } else if (a.equalsIgnoreCase("standard")) {
                 syncMode = 1;
+            } else if (a.equalsIgnoreCase("gui")) {
+                syncMode = 2;
             } else {
                 System.err.println("Unknown option '" + a + "'.");
                 printHelp();
@@ -42,35 +53,33 @@ public class Main {
                 return;
             }
         }
-        if (syncMode == 1) {
-            // Only line read from stdin: hostname. (This is written in such a way that it could be an input or a status)
-            System.err.println("Hostname...");
-            String host = new BufferedReader(new InputStreamReader(System.in)).readLine();
-            Synchronizer s = new Synchronizer(new ServerLayout(host), new SyncFeedback() {
-                String bk = "";
-                @Override
-                public void handlingFile(String file, double percent) {
-                    bk = file;
-                    System.out.println("#Negotiating... " + file);
-                    System.out.println(percent * 100);
-                }
-
-                @Override
-                public void doingTask(String task) {
-                    System.out.println("#" + task + "... " + bk);
-                }
-
-                @Override
-                public void logNote(String note) {
-                    System.err.println(note);
-                }
-            });
-            s.runSynchronize(noHost);
-        } else {
+        if (syncMode == 0) {
             System.err.println("No sync mode passed.");
             printHelp();
             System.exit(1);
             return;
+        }
+        if (syncMode == 1) {
+            // Only line read from stdin: hostname. (This is written in such a way that it could be an input or a status)
+            System.err.println("Hostname...");
+            String host = new BufferedReader(new InputStreamReader(System.in)).readLine();
+            Synchronizer s = new Synchronizer(new ServerLayout(host));
+            LinkedList<Operation> llo = new LinkedList<Operation>();
+            Operation.OperationFeedback of = new Operation.OperationFeedback() {
+                @Override
+                public void showFeedback(String text, double operationProgress) {
+                    System.out.println("# " + text);
+                    System.out.println(operationProgress * 100);
+                }
+            };
+            s.prepareSync(noHost, llo).execute(of);
+            for (Operation o : llo)
+                o.execute(of);
+        } else if (syncMode == 2) {
+            HMRFrame frame = new HMRFrame();
+            frame.reset(new RequestHostnameState(frame));
+        } else {
+            System.err.println("Unrecognized synchronization mode, internal error.");
         }
     }
 
@@ -96,6 +105,7 @@ public class Main {
         System.err.println("standard: Standard console-based sync. You need this to make the program do anything.");
         System.err.println("noHost: Do not host any files.");
         System.err.println("        Useful if you want to update the indexes on the server, but download them so you can re-run sync and host on a drive.");
+        System.err.println("gui: Allows precise control via a Swing GUI. Ignores noHost since this is totally manually operated.");
     }
 
     private static void printExample() {

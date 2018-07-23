@@ -122,12 +122,17 @@ public class Index {
         return n;
     }
 
-    // Retrieve all index entries which aren't deletion records.
+    // Retrieve all index entries, apart from deletion records.
     public HashSet<IndexEntry> getLivingFiles(String theNewHost) {
         HashSet<IndexEntry> n = new HashSet<>();
-        for (Map.Entry<String, HashMap<String, IndexEntry>> e : entries.entrySet())
-            if (e.getValue().containsKey(theNewHost))
-                n.add(e.getValue().get(theNewHost));
+        for (Map.Entry<String, HashMap<String, IndexEntry>> e : entries.entrySet()) {
+            if (e.getValue().containsKey(theNewHost)) {
+                // All paths on this host go here.
+                IndexEntry res = e.getValue().get(theNewHost);
+                if (res.size != -1)
+                    n.add(res);
+            }
+        }
         return n;
     }
 }
