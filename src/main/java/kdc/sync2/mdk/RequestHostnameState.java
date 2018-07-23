@@ -34,7 +34,7 @@ public class RequestHostnameState implements HMRState {
     @Override
     public Container createUI() {
         final HMRTextField tf;
-        return new HMRSplitterLayout(tf = new HMRTextField("archways"), new HMRButton("OK", new Runnable() {
+        return new HMRSplitterLayout(tf = new HMRTextField(""), new HMRButton("OK", new Runnable() {
             @Override
             public void run() {
                 if (tf.getText().length() == 0) {
