@@ -7,6 +7,7 @@
 package kdc.sync2.mdk;
 
 import kdc.sync2.Operation;
+import kdc.sync2.OperationLists;
 import kdc.sync2.hmr.*;
 
 import javax.swing.*;
@@ -18,39 +19,46 @@ import java.util.LinkedList;
  * Created on July 23, 2018.
  */
 public class OperationPlannerState implements HMRState.ResizableHMRState {
-    public LinkedList<Operation> operations;
+    public final OperationLists operations;
     public final HMRFrame frame;
-    public HashSet<Operation> disable = new HashSet<Operation>();
-    public OperationPlannerState(HMRFrame f, LinkedList<Operation> ops) {
+    public final HashSet<Operation> disable = new HashSet<Operation>();
+    public final HMRState onEndState;
+    public OperationPlannerState(HMRFrame f, OperationLists ops, HMRState oes) {
         frame = f;
         operations = ops;
+        onEndState = oes;
     }
 
     @Override
     public Container createUI() {
-        HMRScrollLayout svl = new HMRScrollLayout(true);
-        for (final Operation o : operations) {
-            final boolean alreadyDisabled = disable.contains(o);
-            svl.addPanel(new HMRSplitterLayout(new JLabel(o.toString()), new HMRButton(alreadyDisabled ? "OFF" : "ON", new Runnable() {
-                @Override
-                public void run() {
-                    if (alreadyDisabled) {
-                        disable.remove(o);
-                    } else {
-                        disable.add(o);
+        JTabbedPane jtp = new JTabbedPane();
+        for (String s : operations.stages) {
+            HMRScrollLayout svl = new HMRScrollLayout(1);
+            for (final Operation o : operations.getStage(s)) {
+                final boolean alreadyDisabled = disable.contains(o);
+                svl.addPanel(new HMRSplitterLayout(new HMRLabel(o.toString()), new HMRButton(alreadyDisabled ? "OFF" : "ON", new Runnable() {
+                    @Override
+                    public void run() {
+                        if (alreadyDisabled) {
+                            disable.remove(o);
+                        } else {
+                            disable.add(o);
+                        }
+                        frame.reset(OperationPlannerState.this, false);
                     }
-                    frame.reset(OperationPlannerState.this, false);
-                }
-            }), false, 1));
+                }), false, 1));
+            }
+            jtp.addTab(s, svl);
         }
-        return new HMRSplitterLayout(svl, new HMRButton("Execute", new Runnable() {
+        return new HMRSplitterLayout(jtp, new HMRButton("Execute", new Runnable() {
             @Override
             public void run() {
                 LinkedList<Operation> finOps = new LinkedList<Operation>();
-                for (Operation o : operations)
-                    if (!disable.contains(o))
-                        finOps.add(o);
-                frame.reset(new ExecutingOperationState(frame, new Operation.GroupOperation(finOps.toArray(new Operation[0])), new RequestHostnameState(frame)));
+                for (String s : operations.stages)
+                    for (Operation o : operations.getStage(s))
+                        if (!disable.contains(o))
+                            finOps.add(o);
+                frame.reset(new ExecutingOperationState(frame, new Operation.GroupOperation(finOps.toArray(new Operation[0])), onEndState));
             }
         }), true, 1d);
     }

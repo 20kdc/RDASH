@@ -64,7 +64,7 @@ public class Main {
             System.err.println("Hostname...");
             String host = new BufferedReader(new InputStreamReader(System.in)).readLine();
             Synchronizer s = new Synchronizer(new ServerLayout(host));
-            LinkedList<Operation> llo = new LinkedList<Operation>();
+            OperationLists llo = new OperationLists();
             Operation.OperationFeedback of = new Operation.OperationFeedback() {
                 @Override
                 public void showFeedback(String text, double operationProgress) {
@@ -73,10 +73,11 @@ public class Main {
                 }
             };
             s.prepareSync(noHost, llo).execute(of);
-            new Operation.GroupOperation(llo.toArray(new Operation[0])).execute(of);
+            for (String st : llo.stages)
+                new Operation.GroupOperation(llo.getStage(st).toArray(new Operation[0])).execute(of);
         } else if (syncMode == 2) {
             HMRFrame frame = new HMRFrame();
-            frame.reset(new RequestHostnameState(frame));
+            frame.reset(new RequestHostnameState(frame, noHost));
         } else {
             System.err.println("Unrecognized synchronization mode, internal error.");
         }

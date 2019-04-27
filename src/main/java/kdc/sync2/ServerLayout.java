@@ -54,8 +54,6 @@ public class ServerLayout {
             if (dir.exists())
                 if (dir.isDirectory())
                     return;
-            // assume that the DB is broken
-            getIndex(hostname).delete();
             throw new RuntimeException("SYSTEM FAILURE (couldn't create dir.)");
         }
     }

@@ -7,6 +7,7 @@
 package kdc.sync2.mdk;
 
 import kdc.sync2.Operation;
+import kdc.sync2.OperationLists;
 import kdc.sync2.ServerLayout;
 import kdc.sync2.Synchronizer;
 import kdc.sync2.hmr.*;
@@ -22,8 +23,9 @@ import java.util.LinkedList;
  */
 public class RequestHostnameState implements HMRState {
     public HMRFrame frame;
-    public RequestHostnameState(HMRFrame f) {
-        frame = f;
+    public boolean noHost;
+    public RequestHostnameState(HMRFrame f, boolean nh) {
+        frame = f; noHost = nh;
     }
 
     @Override
@@ -45,8 +47,8 @@ public class RequestHostnameState implements HMRState {
                 } else {
                     final ServerLayout theServ = new ServerLayout(tf.getText());
                     final Synchronizer theSync = new Synchronizer(theServ);
-                    final LinkedList<Operation> res = new LinkedList<Operation>();
-                    frame.reset(new ExecutingOperationState(frame, theSync.prepareSync(false, res), new OperationPlannerState(frame, res)));
+                    final OperationLists ol = new OperationLists();
+                    frame.reset(new ExecutingOperationState(frame, theSync.prepareSync(noHost, ol), new OperationPlannerState(frame, ol, RequestHostnameState.this)));
                 }
             }
         }), false, 1d);

@@ -10,10 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A class to hold the actual synchronization code.
@@ -29,7 +26,7 @@ public class Synchronizer {
         layout = l;
     }
 
-    public Operation prepareSync(final boolean noHost, final LinkedList<Operation> preparedList) {
+    public Operation prepareSync(final boolean noHost, final OperationLists preparedLists) {
         String critical = layout.getCriticalFlag();
         if (critical != null)
             throw new RuntimeException("SANITY CHECK : Pre-sync checks show that file " + critical + " is in an uncertain state due to sync failure.");
@@ -63,16 +60,18 @@ public class Synchronizer {
         return new Operation() {
             @Override
             public void execute(OperationFeedback feedback) {
-                String[] d = theDatabase.entries.keySet().toArray(new String[0]);
+                LinkedList<String> lls = new LinkedList<String>(theDatabase.entries.keySet());
+                Collections.sort(lls);
+                String[] d = lls.toArray(new String[0]);
                 for (int i = 0; i < d.length; i++) {
                     feedback.showFeedback("Checking " + d[i], i / (double) d.length);
                     try {
-                        negotiateFile(theDatabase, theOldDatabase, existingHosts, d[i], preparedList, noHost);
+                        negotiateFile(theDatabase, theOldDatabase, existingHosts, d[i], preparedLists, noHost);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
-                preparedList.add(new Operation() {
+                preparedLists.cleanup.add(new Operation() {
                     @Override
                     public String toString() {
                         return "Update Remote Index";
@@ -92,7 +91,7 @@ public class Synchronizer {
     }
 
     // Note: the old index is used to indicate time/date of what's been uploaded already.
-    private void negotiateFile(final Index newIndex, Index oldIndex, HashSet<String> existingHosts, final String path, LinkedList<Operation> actuallyPerform, boolean noHost) throws IOException {
+    private void negotiateFile(final Index newIndex, Index oldIndex, HashSet<String> existingHosts, final String path, OperationLists actuallyPerform, boolean noHost) throws IOException {
         // Note that only files in newIndex are negotiated.
         final HashMap<String, IndexEntry> hosts = newIndex.entries.get(path);
         // First, do we need to update? If so, we do NOT want to upload, no matter what.
@@ -147,10 +146,10 @@ public class Synchronizer {
                                     validHosts.add(shouldBe);
                                 }
                             } else {
-                                actuallyPerform.add(new Operation.DeleteFileOperation("out-of-date remote file", shouldBe));
+                                actuallyPerform.cleanup.add(new Operation.DeleteFileOperation("out-of-date remote file", shouldBe));
                             }
                         } else {
-                            actuallyPerform.add(new Operation.DeleteFileOperation("remote conflicting non-file", shouldBe));
+                            actuallyPerform.cleanup.add(new Operation.DeleteFileOperation("remote conflicting non-file", shouldBe));
                         }
                     }
                 }
@@ -165,19 +164,22 @@ public class Synchronizer {
             if (bestHost != null) {
                 final File res = layout.getLocalFile(baseGet);
                 if (baseGet.size == -1) {
-                    final String text = "Delete " + res + " because of " + bestHost;
-                    actuallyPerform.add(new Operation() {
-                        @Override
-                        public String toString() {
-                            return text;
-                        }
+                    if (res.exists()) {
+                        // We have the file and we've been told to delete the file.
+                        final String text = "Delete " + res + " because of " + bestHost;
+                        actuallyPerform.cleanup.add(new Operation() {
+                            @Override
+                            public String toString() {
+                                return text;
+                            }
 
-                        @Override
-                        public void execute(OperationFeedback feedback) {
-                            res.delete();
-                            hosts.remove(layout.hostname);
-                        }
-                    });
+                            @Override
+                            public void execute(OperationFeedback feedback) {
+                                res.delete();
+                                hosts.remove(layout.hostname);
+                            }
+                        });
+                    }
                 } else  {
                     final File hostedFile = layout.getFile(bestHost, baseGet);
                     // Keep in mind that bestDate and bestGet are linked, but NOT bestHost.
@@ -186,7 +188,7 @@ public class Synchronizer {
                     //  even if it's wrong.
                     long correctSize = hosts.get(bestHost).size;
                     if (hostedFile.length() == correctSize) {
-                        actuallyPerform.add(new Operation() {
+                        actuallyPerform.download.add(new Operation() {
 
                             @Override
                             public String toString() {
@@ -237,7 +239,7 @@ public class Synchronizer {
                 // There are no valid hosts, which means by definition nobody has it.
                 if (hostUpdate) {
                     if (!noHost) {
-                        actuallyPerform.add(new Operation() {
+                        actuallyPerform.upload.add(new Operation() {
                             @Override
                             public String toString() {
                                 return "Upload " + path;
@@ -268,7 +270,7 @@ public class Synchronizer {
                     // if no valid hosts and no hostupdate, this file is not in flux
                 }
             } else if (!hostUpdate) {
-                actuallyPerform.add(new Operation() {
+                actuallyPerform.cleanup.add(new Operation() {
                     @Override
                     public String toString() {
                         return "Purge unnecessary copies of " + path;

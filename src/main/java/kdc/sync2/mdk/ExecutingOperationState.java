@@ -7,9 +7,7 @@
 package kdc.sync2.mdk;
 
 import kdc.sync2.Operation;
-import kdc.sync2.hmr.HMRFrame;
-import kdc.sync2.hmr.HMRSplitterLayout;
-import kdc.sync2.hmr.HMRState;
+import kdc.sync2.hmr.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +28,7 @@ public class ExecutingOperationState implements HMRState.ResizableHMRState {
 
     @Override
     public Container createUI() {
-        final JLabel status = new JLabel("Starting the operations immediately.");
+        final HMRLabel status = new HMRLabel("Starting the operations immediately.");
         final JProgressBar progress = new JProgressBar();
         progress.setMinimum(0);
         progress.setMaximum(1000);

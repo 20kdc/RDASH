@@ -1,3 +1,9 @@
+/*
+ * I, 20kdc, release this code into the public domain.
+ * I make no guarantees or provide any warranty,
+ *  implied or otherwise, with this code.
+ */
+
 package kdc.sync2;
 
 import java.io.File;
@@ -8,6 +14,7 @@ import java.io.File;
 public interface Operation {
     // Should show at least some feedback immediately on start.
     void execute(OperationFeedback feedback);
+
     interface OperationFeedback {
         void showFeedback(String text, double operationProgress);
     }

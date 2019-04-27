@@ -15,17 +15,25 @@ import java.awt.*;
 public class HMRScrollLayout extends JScrollPane {
     private final JPanel corePanel;
 
-    public HMRScrollLayout(boolean direction) {
+    public HMRScrollLayout(int direction) {
         corePanel = new JPanel();
         setViewportView(corePanel);
-        if (direction) {
-            setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-            corePanel.setLayout(new GridLayout(0, 1));
-        } else {
+        if (direction == 0) {
             setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
             setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             corePanel.setLayout(new GridLayout(1, 0));
+        } else if (direction == 1) {
+            setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            corePanel.setLayout(new GridLayout(0, 1));
+        } else if (direction == 2) {
+            setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+            setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            corePanel.setLayout(new GridLayout(1, 0));
+        } else if (direction == 3) {
+            setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+            setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+            corePanel.setLayout(new GridLayout(0, 1));
         }
     }
 
