@@ -233,16 +233,16 @@ public class Synchronizer {
                 }
             }
         } else if (baseGet.size >= 0) {
-            boolean hostUpdate = getHostUpdate(existingHosts, hosts, bestDate, true);
+            final String hostUpdate = getHostUpdate(existingHosts, hosts, bestDate, true);
             // We need to see if other people need to update
             if (validHosts.size() == 0) {
                 // There are no valid hosts, which means by definition nobody has it.
-                if (hostUpdate) {
+                if (hostUpdate != null) {
                     if (!noHost) {
                         actuallyPerform.upload.add(new Operation() {
                             @Override
                             public String toString() {
-                                return "Upload " + path;
+                                return "Upload " + path + " for " + hostUpdate;
                             }
 
                             @Override
@@ -269,7 +269,7 @@ public class Synchronizer {
                     }
                     // if no valid hosts and no hostupdate, this file is not in flux
                 }
-            } else if (!hostUpdate) {
+            } else if (hostUpdate == null) {
                 actuallyPerform.cleanup.add(new Operation() {
                     @Override
                     public String toString() {
@@ -289,23 +289,37 @@ public class Synchronizer {
             // Does anyone else need to know?
             // (note - if they don't have it in their index, it doesn't matter.
             //  this also prevents circles of update-deletion-records, followed by purges.)
-            boolean hostUpdate = getHostUpdate(existingHosts, hosts, bestDate, false);
-            if (!hostUpdate)
+            String hostUpdate = getHostUpdate(existingHosts, hosts, bestDate, false);
+            if (hostUpdate == null)
                 hosts.remove(layout.hostname);
         }
     }
 
     // existingHosts is the global list of hosts in the world, hosts is the usual host->index for this file, bestDate == lastest version time.
-    public static boolean getHostUpdate(HashSet<String> existingHosts, HashMap<String, IndexEntry> hosts, long bestDate, boolean mustExist) {
+    public static String getHostUpdate(HashSet<String> existingHosts, HashMap<String, IndexEntry> hosts, long bestDate, boolean mustExist) {
+        LinkedList<String> hss = new LinkedList<String>();
         // If everybody is supposed to have this record, does somebody not have it?
         if (mustExist)
             for (String s : existingHosts)
                 if (!hosts.containsKey(s))
-                    return true;
+                    if (!hss.contains(s))
+                        hss.add(s);
         // Does anyone have an outdated record?
         for (Map.Entry<String, IndexEntry> people : hosts.entrySet())
             if (people.getValue().time < bestDate)
-                    return true;
-        return false;
+                if (!hss.contains(people.getKey()))
+                    hss.add(people.getKey());
+        if (hss.size() == 0)
+            return null;
+        Collections.sort(hss);
+        StringBuilder sb = new StringBuilder();
+        boolean bln = false;
+        for (String st : hss) {
+            if (bln)
+                sb.append(' ');
+            sb.append(st);
+            bln = true;
+        }
+        return sb.toString();
     }
 }
