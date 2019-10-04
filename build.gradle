@@ -7,7 +7,6 @@ plugins {
 
 group = 'kdc'
 version = "${versionNum}"
-if (System.env.BUILD_NUMBER != null) version = "$version#$System.env.BUILD_NUMBER"
 mainClassName = 'kdc.sync2.Main'
 
 compileJava {

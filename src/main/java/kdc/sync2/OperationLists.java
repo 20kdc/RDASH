@@ -9,8 +9,11 @@ package kdc.sync2;
 import java.util.LinkedList;
 
 public class OperationLists {
-    public LinkedList<Operation> download = new LinkedList<Operation>(), upload = new LinkedList<Operation>(), cleanup = new LinkedList<Operation>();
-    public String[] stages = new String[] {"download", "upload", "cleanup"};
+    public LinkedList<Operation> correct = new LinkedList<Operation>();
+    public LinkedList<Operation> download = new LinkedList<Operation>();
+    public LinkedList<Operation> upload = new LinkedList<Operation>();
+    public LinkedList<Operation> cleanup = new LinkedList<Operation>();
+    public String[] stages = new String[] {"correct", "download", "upload", "cleanup"};
     public LinkedList<Operation> getStage(String nt) {
         try {
             return (LinkedList<Operation>) OperationLists.class.getField(nt).get(this);

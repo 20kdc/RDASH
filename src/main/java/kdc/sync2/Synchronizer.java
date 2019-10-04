@@ -60,6 +60,9 @@ public class Synchronizer {
         return new Operation() {
             @Override
             public void execute(OperationFeedback feedback) {
+                feedback.showFeedback("Reading & cleaning server...", 0);
+                layout.updateServerMirror();
+                feedback.showFeedback("Sorting...", 0);
                 LinkedList<String> lls = new LinkedList<String>(theDatabase.entries.keySet());
                 Collections.sort(lls);
                 String[] d = lls.toArray(new String[0]);
@@ -125,6 +128,7 @@ public class Synchronizer {
                 }
             } else {
                 File shouldBe = layout.getFile(people.getKey(), people.getValue());
+                ServerLayout.FileState shouldBeState = layout.getFileState(people.getKey(), people.getValue());
                 // NOTE: Since our index is updated, in the case of an update before sync is complete... just... ugh.
                 // What's going on here is that we need to compare the hosted data to what it's labelled as in the index *then*.
                 // Not the index now.
@@ -133,8 +137,8 @@ public class Synchronizer {
                 if (people.getKey().equals(layout.hostname))
                     entryAtUpload = oldIndex.ensureEntry(path).get(layout.hostname);
                 if (entryAtUpload != null) {
-                    if (shouldBe.exists()) {
-                        if (shouldBe.isFile()) {
+                    if (shouldBeState != ServerLayout.FileState.None) {
+                        if (shouldBeState == ServerLayout.FileState.File) {
                             // It's assumed that server lastmodified is unreliable,
                             // and that the indexes ARE reliable.
                             if (entryAtUpload.time >= bestDate) {
@@ -146,10 +150,10 @@ public class Synchronizer {
                                     validHosts.add(shouldBe);
                                 }
                             } else {
-                                actuallyPerform.cleanup.add(new Operation.DeleteFileOperation("out-of-date remote file", shouldBe));
+                                actuallyPerform.correct.add(new Operation.DeleteFileOperation("out-of-date remote file", shouldBe));
                             }
                         } else {
-                            actuallyPerform.cleanup.add(new Operation.DeleteFileOperation("remote conflicting non-file", shouldBe));
+                            actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote conflicting non-file", shouldBe));
                         }
                     }
                 }
