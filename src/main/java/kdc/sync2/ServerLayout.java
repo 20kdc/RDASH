@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -22,8 +23,7 @@ import java.util.LinkedList;
  */
 public class ServerLayout {
     public final String hostname;
-    private final LinkedList<String> serverFiles = new LinkedList<>();
-    private final LinkedList<String> serverObjects = new LinkedList<>();
+    private final HashMap<String, XState> serverObjects = new HashMap<>();
 
     public ServerLayout(String host) {
         hostname = host;
@@ -31,24 +31,27 @@ public class ServerLayout {
 
     public void updateServerMirror() {
         serverObjects.clear();
-        serverFiles.clear();
         recursiveSearch("server", false);
     }
 
     private void recursiveSearch(String target, boolean canDeleteEmpty) {
         File f = new File(target);
-        if (f.exists())
-            serverObjects.add(target);
         if (f.isDirectory()) {
             boolean found = false;
             for (String s : f.list()) {
                 recursiveSearch(target + "/" + s, true);
                 found = true;
             }
-            if (!found)
+            if ((!found) && canDeleteEmpty) {
                 f.delete();
+            } else {
+                serverObjects.put(target, new DirectoryState());
+            }
         } else if (f.isFile()) {
-            serverFiles.add(target);
+            serverObjects.put(target, new FileState(f.length()));
+        } else {
+            if (f.exists())
+                serverObjects.put(target, new XState());
         }
     }
 
@@ -64,13 +67,9 @@ public class ServerLayout {
     public File getFile(String host, IndexEntry value) {
         return new File("server/host." + host + value.base + value.name);
     }
-    public FileState getFileState(String host, IndexEntry value) {
+    public XState getFileState(String host, IndexEntry value) {
         String place = "server/host." + host + value.base + value.name;
-        if (serverFiles.contains(place))
-            return FileState.File;
-        if (serverObjects.contains(place))
-            return FileState.Object;
-        return FileState.None;
+        return serverObjects.get(place);
     }
 
     public void ensureFileParent(String host, IndexEntry value) {
@@ -138,7 +137,16 @@ public class ServerLayout {
         return new File(hostname + baseGet.base + baseGet.name);
     }
 
-    public enum FileState {
-        File, Object, None;
+    public static class XState {
+    	
+    }
+    public static class FileState extends XState {
+    	public final long size;
+    	public FileState(long s) {
+    		size = s;
+    	}
+    }
+    public static class DirectoryState extends XState {
+    	
     }
 }

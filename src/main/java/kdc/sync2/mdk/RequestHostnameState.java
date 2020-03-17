@@ -45,10 +45,14 @@ public class RequestHostnameState implements HMRState {
                     // This check relies on a detail... :(
                     frame.startDialog("The directory does not exist. Please create it.");
                 } else {
-                    final ServerLayout theServ = new ServerLayout(tf.getText());
-                    final Synchronizer theSync = new Synchronizer(theServ);
-                    final OperationLists ol = new OperationLists();
-                    frame.reset(new ExecutingOperationState(frame, theSync.prepareSync(noHost, ol), new OperationPlannerState(frame, ol, RequestHostnameState.this)));
+                	try {
+                		final ServerLayout theServ = new ServerLayout(tf.getText());
+                    	final Synchronizer theSync = new Synchronizer(theServ);
+                    	final OperationLists ol = new OperationLists();
+                    	frame.reset(new ExecutingOperationState(frame, theSync.prepareSync(noHost, ol), new OperationPlannerState(frame, ol, RequestHostnameState.this)));
+                	} catch (Exception e) {
+                        frame.startDialog(e.toString());
+                	}
                 }
             }
         }), false, 1d);
