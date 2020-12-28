@@ -15,7 +15,7 @@ archivesBaseName = "rdash-se"
 version = "${project(":rdash-core").versionNum}"
 
 // This is used for "application"
-mainClassName = 'kdc.sync2.Main'
+mainClassName = 'kdc.sync2.se.Main'
 
 // "application" doesn't write manifest for some reason
 jar {

@@ -4,10 +4,14 @@
  *  implied or otherwise, with this code.
  */
 
-package kdc.sync2;
+package kdc.sync2.se;
 
-import kdc.sync2.hmr.HMRFrame;
-import kdc.sync2.mdk.RequestHostnameState;
+import kdc.sync2.core.Operation;
+import kdc.sync2.core.OperationLists;
+import kdc.sync2.core.ServerLayout;
+import kdc.sync2.core.Synchronizer;
+import kdc.sync2.se.hmr.HMRFrame;
+import kdc.sync2.se.mdk.RequestHostnameState;
 
 import java.io.BufferedReader;
 import java.io.IOException;

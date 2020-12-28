@@ -4,7 +4,7 @@
  *  implied or otherwise, with this code.
  */
 
-package kdc.sync2.hmr;
+package kdc.sync2.se.hmr;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

@@ -4,11 +4,11 @@
  *  implied or otherwise, with this code.
  */
 
-package kdc.sync2.mdk;
+package kdc.sync2.se.mdk;
 
-import kdc.sync2.Operation;
-import kdc.sync2.OperationLists;
-import kdc.sync2.hmr.*;
+import kdc.sync2.core.Operation;
+import kdc.sync2.core.OperationLists;
+import kdc.sync2.se.hmr.*;
 
 import javax.swing.*;
 import java.awt.*;

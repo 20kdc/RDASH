@@ -4,7 +4,7 @@
  *  implied or otherwise, with this code.
  */
 
-package kdc.sync2;
+package kdc.sync2.core;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-import kdc.sync2.ServerLayout.DirectoryState;
-import kdc.sync2.ServerLayout.FileState;
+import kdc.sync2.core.ServerLayout.DirectoryState;
+import kdc.sync2.core.ServerLayout.FileState;
 
 /**
  * A class to hold the actual synchronization code.

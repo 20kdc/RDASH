@@ -4,9 +4,7 @@
  *  implied or otherwise, with this code.
  */
 
-package kdc.sync2;
-
-import kdc.sync2.IndexEntry;
+package kdc.sync2.core;
 
 import java.io.File;
 import java.io.InputStreamReader;
@@ -17,6 +15,8 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.LinkedList;
+
+import kdc.sync2.core.IndexEntry;
 
 /**
  * Abstracts away the various file paths involved.

@@ -4,7 +4,7 @@
  *  implied or otherwise, with this code.
  */
 
-package kdc.sync2;
+package kdc.sync2.core;
 
 import java.io.File;
 
