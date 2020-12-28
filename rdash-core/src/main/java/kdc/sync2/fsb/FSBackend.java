@@ -37,7 +37,10 @@ public abstract class FSBackend {
                     if (feedback != null)
                         feedback.showFeedback(s, start);
                     double nxtPoint = start + piece;
-                    mapFilesystemRecursiveSearch(map, target + "/" + s, feedback, start, nxtPoint);
+                    String targetExt = target;
+                    if (target != "")
+                        targetExt += "/";
+                    mapFilesystemRecursiveSearch(map, targetExt + s, feedback, start, nxtPoint);
                     start = nxtPoint;
                 }
             }

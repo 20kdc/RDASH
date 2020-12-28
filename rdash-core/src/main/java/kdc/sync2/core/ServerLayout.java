@@ -15,8 +15,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import kdc.sync2.fsb.FSBackend;
+import kdc.sync2.fsb.FSBackend.DirectoryState;
 import kdc.sync2.fsb.FSBackend.XState;
 import kdc.sync2.fsb.FSHandle;
 import kdc.sync2.fsb.TimeRWFSBackend;
@@ -43,9 +45,26 @@ public class ServerLayout {
         criticalFlag = new FSHandle(server, "sync2.crit.txt");
     }
 
-    public void updateServerMirror() {
-        serverObjects2.clear();
-        serverObjects2.putAll(server.mapFilesystem(null));
+    public void updateServerMirror(OperationFeedback feedback) {
+        while (true) {
+            int directoriesInPass = 0;
+            serverObjects2.clear();
+            serverObjects2.putAll(server.mapFilesystem(feedback));
+            for (Entry<String, XState> state : serverObjects2.entrySet()) {
+                if (state instanceof DirectoryState) {
+                    if (((DirectoryState) state).entries.length == 0) {
+                        if (state.getKey() != "") {
+                            System.err.println("Deleting empty directory " + state.getKey());
+                            server.delete(state.getKey());
+                            directoriesInPass++;
+                        }
+                    }
+                }
+            }
+            // Once we're done cleaning...
+            if (directoriesInPass == 0)
+                break;
+        }
     }
 
     // it is assumed that the hostfiles are under this.

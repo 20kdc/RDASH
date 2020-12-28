@@ -15,6 +15,11 @@ public final class FSHandle {
         name = n;
     }
 
+    @Override
+    public String toString() {
+        return host + ":" + name;
+    }
+
     public String getName() {
         return FSBackend.basename(name);
     }
