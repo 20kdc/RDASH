@@ -109,7 +109,7 @@ public class Main {
         System.err.println("standard: Standard console-based sync. You need this to make the program do anything.");
         System.err.println("noHost: Do not host any files.");
         System.err.println("        Useful if you want to update the indexes on the server, but download them so you can re-run sync and host on a drive.");
-        System.err.println("gui: Allows precise control via a Swing GUI. Ignores noHost since this is totally manually operated.");
+        System.err.println("gui: Allows precise control via a Swing GUI.");
     }
 
     private static void printExample() {
