@@ -276,7 +276,7 @@ public class Synchronizer {
                                     return;
                                 }
                                 feedback.showFeedback("Transferring " + path, 0.5);
-                                layout.setCriticalFlag(groundTruth.base + groundTruth.name);
+                                layout.setCriticalFlag(groundTruth.filename);
                                 try {
                                     temp.copy(res);
                                 } catch (Exception ioe) {
@@ -287,7 +287,7 @@ public class Synchronizer {
                                 temp.delete();
                                 res.setLastModified(newIndex.convertStH(groundTruth.time));
                                 if (!hosts.containsKey(layout.hostname)) {
-                                    hosts.put(layout.hostname, new IndexEntry(groundTruth.base, groundTruth.name, groundTruth.time, res.length()));
+                                    hosts.put(layout.hostname, new IndexEntry(groundTruth.filename, groundTruth.time, res.length()));
                                 } else {
                                     hosts.get(layout.hostname).time = groundTruth.time;
                                 }

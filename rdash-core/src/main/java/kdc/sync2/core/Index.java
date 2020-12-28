@@ -55,7 +55,7 @@ public class Index {
             // Sanity check.
             while (dis.readInt() == 4957) {
                 IndexEntry res = new IndexEntry(dis);
-                ensureEntry(res.base + res.name).put(hname, res);
+                ensureEntry(res.filename).put(hname, res);
             }
             dis.close();
             return hname;
@@ -80,7 +80,7 @@ public class Index {
     }
 
     public void fillIndexFromDir(String hname, FSHandle f) {
-        fillIndexFromDirInt(hname, "/", f);
+        fillIndexFromDirInt(hname, "", f);
     }
     // base always ends in "/"
     private void fillIndexFromDirInt(String hname, String base, FSHandle baseF) {
@@ -90,7 +90,7 @@ public class Index {
             } else {
                 HashMap<String, IndexEntry> hm = ensureEntry(base + f.getName());
                 FileTimeState fts = (FileTimeState) f.getState();
-                hm.put(hname, new IndexEntry(base, f.getName(), convertHtS(fts.time), fts.size));
+                hm.put(hname, new IndexEntry(base + f.getName(), convertHtS(fts.time), fts.size));
             }
         }
     }
@@ -104,17 +104,17 @@ public class Index {
                     if (entries.get(e.getKey()).containsKey(theNewHost))
                         continue;
                 if (old.size == -1)
-                    ensureEntry(e.getKey()).put(theNewHost, new IndexEntry(old.base, old.name, old.time, -1));
+                    ensureEntry(e.getKey()).put(theNewHost, new IndexEntry(old.filename, old.time, -1));
             }
         }
         // Secondly, files which have "disappeared" have deletion records (dated to just after the last known update) created.
         HashSet<IndexEntry> oldLiving = theOldDatabase.getLivingFiles(theOldHost);
         HashSet<String> newLivingPaths = pathizeSet(getLivingFiles(theNewHost));
         for (IndexEntry s : oldLiving) {
-            if (!newLivingPaths.contains(s.base + s.name)) {
+            if (!newLivingPaths.contains(s.filename)) {
                 // Create deletion record, and if an update happens within 5 seconds, it's rejected,
                 //  but otherwise updates from outside will simply replace the file.
-                ensureEntry(s.base + s.name).put(theNewHost, new IndexEntry(s.base, s.name, s.time + 5000, -1));
+                ensureEntry(s.filename).put(theNewHost, new IndexEntry(s.filename, s.time + 5000, -1));
             }
         }
     }
@@ -122,7 +122,7 @@ public class Index {
     private HashSet<String> pathizeSet(HashSet<IndexEntry> livingFiles) {
         HashSet<String> n = new HashSet<>();
         for (IndexEntry ie : livingFiles)
-            n.add(ie.base + ie.name);
+            n.add(ie.filename);
         return n;
     }
 

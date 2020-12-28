@@ -16,27 +16,41 @@ import java.io.IOException;
  * Furthermore, note that an IndexEntry should never be shared between two Indexes for this reason.
  */
 public class IndexEntry {
-    // base always ends in "/", while name is the filename.
-    public String base, name;
+    // Filename. Example: "moo/sound1.wav"
+    public String filename;
     public long time, size;
 
-    public IndexEntry(String base, String name, long l, long sz) {
-        this.base = base;
-        this.name = name;
+    public IndexEntry(String filename, long l, long sz) {
+        this.filename = filename;
         time = l;
         size = sz;
     }
 
     public IndexEntry(DataInputStream dis) throws IOException {
-        base = dis.readUTF();
-        name = dis.readUTF();
-        time = dis.readLong();
-        size = dis.readLong();
+        String versionS = dis.readUTF();
+        if (!versionS.startsWith("`")) {
+            // versionS is of the form "/moo/"
+            // name is of the form "sound1.wav"
+            String name = dis.readUTF();
+            filename = versionS.substring(1) + name;
+            time = dis.readLong();
+            size = dis.readLong();
+        } else {
+            int version = Integer.parseInt(versionS.substring(1));
+            versionS = "";
+            if (version == 0) {
+                filename = dis.readUTF();
+                time = dis.readLong();
+                size = dis.readLong();
+            } else {
+                throw new IOException("cannot understand version " + version);
+            }
+        }
     }
 
     public void write(DataOutputStream dos) throws IOException {
-        dos.writeUTF(base);
-        dos.writeUTF(name);
+        dos.writeUTF("`0");
+        dos.writeUTF(filename);
         dos.writeLong(time);
         dos.writeLong(size);
     }

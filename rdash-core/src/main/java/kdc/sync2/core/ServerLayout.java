@@ -58,18 +58,18 @@ public class ServerLayout {
     }
 
     public FSHandle getFile(String host, IndexEntry value) {
-        return new FSHandle(server, "host." + host + value.base + value.name);
+        return new FSHandle(server, "host." + host + "/" + value.filename);
     }
     public XState getFileState(String host, IndexEntry value) {
-        String place = "server/host." + host + value.base + value.name;
+        String place = "host." + host + "/" + value.filename;
         return serverObjects2.get(place);
     }
 
     public void ensureFileParent(String host, IndexEntry value) {
-        server.mkdir("host." + host + value.base);
+        server.ensureDirsToContain("host." + host + "/" + value.filename);
     }
     public void ensureLocalFileParent(IndexEntry value) {
-        local.mkdir(value.base.substring(1));
+        local.ensureDirsToContain(value.filename);
     }
 
     public String getCriticalFlag() {
@@ -111,7 +111,7 @@ public class ServerLayout {
     }
 
     public FSHandle getLocalFile(IndexEntry baseGet) {
-        return new FSHandle(local, baseGet.base.substring(1) + baseGet.name);
+        return new FSHandle(local, baseGet.filename);
     }
 
 }
