@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import kdc.sync2.fsb.FSHandle;
+import kdc.sync2.fsb.TimeRFSBackend.FileTimeState;
+
 /**
  * Not actually just one index, but a database of indexes.
  */
@@ -40,10 +43,10 @@ public class Index {
         return es;
     }
 
-    public String fillIndexFromFile(File f) {
+    public String fillIndexFromFile(FSHandle f) {
         // Certainly not a magical index.
         try {
-            DataInputStream dis = new DataInputStream(new FileInputStream(f));
+            DataInputStream dis = new DataInputStream(f.openRead());
             String hname = dis.readUTF();
             if (!hname.equals(f.getName())) {
                 System.out.println("Index contamination detected, " + f.getName());
@@ -62,8 +65,8 @@ public class Index {
         return null;
     }
 
-    public void pourSubIndexToFile(String hname, File f) throws IOException {
-        DataOutputStream dos = new DataOutputStream(new FileOutputStream(f));
+    public void pourSubIndexToFile(String hname, FSHandle f) throws IOException {
+        DataOutputStream dos = new DataOutputStream(f.openWrite());
         dos.writeUTF(hname);
         for (String s : entries.keySet()) {
             HashMap<String, IndexEntry> hs = entries.get(s);
@@ -76,17 +79,18 @@ public class Index {
         dos.close();
     }
 
-    public void fillIndexFromDir(String hname, File f) {
+    public void fillIndexFromDir(String hname, FSHandle f) {
         fillIndexFromDirInt(hname, "/", f);
     }
     // base always ends in "/"
-    private void fillIndexFromDirInt(String hname, String base, File baseF) {
-        for (File f : baseF.listFiles()) {
+    private void fillIndexFromDirInt(String hname, String base, FSHandle baseF) {
+        for (FSHandle f : baseF.listFiles()) {
             if (f.isDirectory()) {
                 fillIndexFromDirInt(hname, base + f.getName() + "/", f);
             } else {
                 HashMap<String, IndexEntry> hm = ensureEntry(base + f.getName());
-                hm.put(hname, new IndexEntry(base, f.getName(), convertHtS(f.lastModified()), f.length()));
+                FileTimeState fts = (FileTimeState) f.getState();
+                hm.put(hname, new IndexEntry(base, f.getName(), convertHtS(fts.time), fts.size));
             }
         }
     }

@@ -1,4 +1,4 @@
-package kdc.sync2.core.backend.fs;
+package kdc.sync2.fsb.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,8 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 
-import kdc.sync2.core.backend.FSBackend;
-import kdc.sync2.core.backend.TimeRWFSBackend;
+import kdc.sync2.fsb.FSBackend;
+import kdc.sync2.fsb.TimeRWFSBackend;
 
 public class RealFSBackend extends TimeRWFSBackend {
     public String prefix;
@@ -20,15 +20,27 @@ public class RealFSBackend extends TimeRWFSBackend {
         prefix = pfx;
     }
 
+    @Override
+    public String toString() {
+        return "real:" + prefix;
+    }
+
     public File asFile(String fileName) {
         return new File(prefix + fileName);
     }
 
     @Override
-    public XState getState(String fileName) throws IOException {
+    public XState getState(String fileName) {
         File f = asFile(fileName);
         if (!f.exists())
             return null;
+        if (f.isDirectory()) {
+            File[] list = f.listFiles();
+            String[] ents = new String[list.length];
+            for (int i = 0; i < ents.length; i++)
+                ents[i] = list[i].getName();
+            return new DirectoryState(ents);
+        }
         return new FileTimeState(f.length(), f.lastModified());
     }
 
@@ -43,12 +55,23 @@ public class RealFSBackend extends TimeRWFSBackend {
     }
 
     @Override
-    public void delete(String fileName) throws IOException {
-        asFile(fileName).delete();
+    public void delete(String fileName) {
+        File fn = asFile(fileName);
+        fn.delete();
+        if (fn.exists())
+            throw new RuntimeException("Failed to delete file.");
     }
 
     @Override
-    public void changeTime(String fileName, long time) throws IOException {
+    public void mkdir(String fileName) {
+        File fn = asFile(fileName);
+        fn.mkdir();
+        if (!fn.isDirectory())
+            throw new RuntimeException("Failed to create directory.");
+    }
+
+    @Override
+    public void changeTime(String fileName, long time) {
         asFile(fileName).setLastModified(time);
     }
 

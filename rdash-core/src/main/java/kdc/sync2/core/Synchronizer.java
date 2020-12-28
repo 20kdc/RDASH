@@ -12,8 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-import kdc.sync2.core.ServerLayout.DirectoryState;
-import kdc.sync2.core.ServerLayout.FileState;
+import kdc.sync2.fsb.FSBackend.*;
+import kdc.sync2.fsb.FSHandle;
 
 /**
  * A class to hold the actual synchronization code.
@@ -49,10 +49,10 @@ public class Synchronizer {
 
         final Index theDatabase = new Index();
         final HashSet<String> existingHosts = new HashSet<>();
-        File id = layout.getIndexDirectory();
+        FSHandle id = layout.getIndexDirectory();
         if (!id.exists())
             throw new RuntimeException("SANITY CHECK : Index dir must exist");
-        for (File f : id.listFiles())
+        for (FSHandle f : id.listFiles())
             if (f.isFile()) {
                 if (!f.getName().equals(layout.hostname)) {
                     System.out.println("Importing index '" + f.getName() + "'");
@@ -141,7 +141,7 @@ public class Synchronizer {
         // (so we don't end up with >1 person hosting a version, and we know where to look)
         // Note that bestHost cannot be us. This is used in an attempt to detect bad uploads.
         // (Unless there's a deletion record involved.)
-        final HashSet<File> validHosts = new HashSet<>();
+        final LinkedList<FSHandle> validHosts = new LinkedList<>();
         String bestHost = null;
         
         // This is a fallback in case the below loop is unable to get data about our hosted copy for any reason.
@@ -171,8 +171,8 @@ public class Synchronizer {
             	// This person says they have the file, but it could be old, their uploaded copy could be corrupt,
             	//  or some other stuff could be going on.
             	
-                File serverFile = layout.getFile(people.getKey(), theUploadedEntry);
-                ServerLayout.XState serverState = layout.getFileState(people.getKey(), theUploadedEntry);
+                FSHandle serverFile = layout.getFile(people.getKey(), theUploadedEntry);
+                XState serverState = layout.getFileState(people.getKey(), theUploadedEntry);
                 
                 // 1. Determine that they're even hosting something that looks like the file.
                 if (serverState == null)
@@ -189,7 +189,7 @@ public class Synchronizer {
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote conflicting non-file", serverFile));
                     continue;
                 }
-                ServerLayout.FileState serverFileState = (ServerLayout.FileState) serverState;
+                FileState serverFileState = (FileState) serverState;
 
                 // 4. And in size.
                 // Compare against GROUND TRUTH
@@ -213,7 +213,7 @@ public class Synchronizer {
         	if (!hosts.containsKey(layout.hostname)) {
         		if (layout.getFileState(layout.hostname, groundTruth) != null) {
         	        // If we're hosting a file we don't have locally, get rid of it.
-                    File serverFile = layout.getFile(layout.hostname, groundTruth);
+                    FSHandle serverFile = layout.getFile(layout.hostname, groundTruth);
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file without local copy", serverFile));
             	}
             }
@@ -226,7 +226,7 @@ public class Synchronizer {
         if (ourTime < groundTruth.time) {
             // If this fails, we need the file but we can't get it
             if (bestHost != null) {
-                final File res = layout.getLocalFile(groundTruth);
+                final FSHandle res = layout.getLocalFile(groundTruth);
                 if (groundTruth.size == -1) {
                     if (res.exists()) {
                         // We have the file and we've been told to delete the file.
@@ -245,7 +245,7 @@ public class Synchronizer {
                         });
                     }
                 } else  {
-                    final File hostedFile = layout.getFile(bestHost, groundTruth);
+                    final FSHandle hostedFile = layout.getFile(bestHost, groundTruth);
                     // Keep in mind that bestDate and bestGet are linked, but NOT bestHost.
                     // Technically this should all be correct anyway,
                     //  but let's try and keep consistency with the entry we say we're downloading,
@@ -267,18 +267,18 @@ public class Synchronizer {
                                 // We need to update to bestHost's version, if possible.
                                 layout.ensureLocalFileParent(groundTruth);
                                 // Split this into two sections to reduce chance of accidental corruption.
-                                File temp = layout.getLocalTemp();
+                                FSHandle temp = layout.getLocalTemp();
                                 try {
-                                    Files.copy(hostedFile.toPath(), temp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                    hostedFile.copy(temp);
                                 } catch (IOException ioe) {
                                     ioe.printStackTrace();
                                     failedToUploadAFile = true;
                                     return;
                                 }
                                 feedback.showFeedback("Transferring " + path, 0.5);
-                                layout.setCriticalFlag(groundTruth);
+                                layout.setCriticalFlag(groundTruth.base + groundTruth.name);
                                 try {
-                                    Files.copy(temp.toPath(), res.toPath(), StandardCopyOption.REPLACE_EXISTING); // CRITICAL OPERATION
+                                    temp.copy(res);
                                 } catch (Exception ioe) {
                                     System.exit(1);
                                     return;
@@ -316,7 +316,7 @@ public class Synchronizer {
                                 feedback.showFeedback("Uploading " + path, 0);
                                 try {
                                     layout.ensureFileParent(layout.hostname, groundTruth);
-                                    Files.copy(layout.getLocalFile(groundTruth).toPath(), layout.getFile(layout.hostname, groundTruth).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                    layout.getLocalFile(groundTruth).copy(layout.getFile(layout.hostname, groundTruth));
                                 } catch (Exception ioe) {
                                     ioe.printStackTrace();
                                     feedback.showFeedback("Something went wrong - won't continue uploading files.", 0);
@@ -342,7 +342,7 @@ public class Synchronizer {
 
                     @Override
                     public void execute(OperationFeedback feedback) {
-                        for (File host : validHosts)
+                        for (FSHandle host : validHosts)
                             host.delete();
                     }
                 });

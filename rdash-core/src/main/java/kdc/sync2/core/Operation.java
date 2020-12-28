@@ -8,6 +8,8 @@ package kdc.sync2.core;
 
 import java.io.File;
 
+import kdc.sync2.fsb.FSHandle;
+
 /**
  * Created on July 23, 2018.
  */
@@ -57,8 +59,8 @@ public interface Operation {
 
     final class DeleteFileOperation implements Operation {
         final String string;
-        final File target;
-        public DeleteFileOperation(String why, File shouldBe) {
+        final FSHandle target;
+        public DeleteFileOperation(String why, FSHandle shouldBe) {
             string = "Delete " + why + " " + shouldBe;
             target = shouldBe;
         }

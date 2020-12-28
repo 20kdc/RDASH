@@ -1,4 +1,4 @@
-package kdc.sync2.core.backend;
+package kdc.sync2.fsb;
 
 /**
  * This guarantees returning FileTimeState rather than FileState.

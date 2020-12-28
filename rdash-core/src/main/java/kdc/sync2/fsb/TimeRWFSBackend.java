@@ -1,4 +1,4 @@
-package kdc.sync2.core.backend;
+package kdc.sync2.fsb;
 
 import java.io.IOException;
 
@@ -12,5 +12,5 @@ public abstract class TimeRWFSBackend extends TimeRFSBackend {
      * @param fileName Filename
      * @param time     The new time
      */
-    public abstract void changeTime(String fileName, long time) throws IOException;
+    public abstract void changeTime(String fileName, long time);
 }

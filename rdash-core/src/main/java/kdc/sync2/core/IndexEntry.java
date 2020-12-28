@@ -16,6 +16,7 @@ import java.io.IOException;
  * Furthermore, note that an IndexEntry should never be shared between two Indexes for this reason.
  */
 public class IndexEntry {
+    // base always ends in "/", while name is the filename.
     public String base, name;
     public long time, size;
 
