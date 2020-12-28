@@ -1,20 +1,6 @@
-*
+*/.classpath
+*/.project
+*/.settings
+*/.gradle
+*/build
 
-!.gitignore
-!build.gradle
-!gradle.properties
-!LICENCE.md
-!README.md
-!src
-!src/
-!src/main
-!src/main/
-!src/main/java
-!src/main/java/
-!src/main/java/kdc
-!src/main/java/kdc/
-!src/main/java/kdc/sync2
-!src/main/java/kdc/sync2/
-!src/main/java/kdc/sync2/*.java
-!src/main/java/kdc/sync2/*
-!src/main/java/kdc/sync2/*/*.java
