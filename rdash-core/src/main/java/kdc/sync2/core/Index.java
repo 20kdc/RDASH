@@ -20,21 +20,6 @@ import kdc.sync2.fsb.TimeRFSBackend.FileTimeState;
 public class Index {
     public HashMap<String, HashMap<String, IndexEntry>> entries = new HashMap<>();
 
-    // NTFS Bad Stuff Prevention System. If the system's timer is accurate to about 15 seconds, all should be well.
-    // Note that changing this will mess with index file compatibility.
-    public long neededResolution = 15000;
-    // Convert server time to host time.
-    public long convertStH(long bestDate) {
-        return bestDate * neededResolution;
-    }
-    public long convertHtS(long bestDate) {
-        long r = bestDate / (neededResolution / 2); // with the default of 15000, this should be 7500.
-        long rd = r / 2;
-        if (r % 2 == 1)
-            rd++;
-        return rd;
-    }
-
     public HashMap<String, IndexEntry> ensureEntry(String key) {
         if (entries.containsKey(key))
             return entries.get(key);
@@ -90,7 +75,7 @@ public class Index {
             } else {
                 HashMap<String, IndexEntry> hm = ensureEntry(base + f.getName());
                 FileTimeState fts = (FileTimeState) f.getState();
-                hm.put(hname, new IndexEntry(base + f.getName(), convertHtS(fts.time), fts.size));
+                hm.put(hname, new IndexEntry(base + f.getName(), new IndexTime(fts.time), fts.size));
             }
         }
     }
@@ -114,7 +99,7 @@ public class Index {
             if (!newLivingPaths.contains(s.filename)) {
                 // Create deletion record, and if an update happens within 5 seconds, it's rejected,
                 //  but otherwise updates from outside will simply replace the file.
-                ensureEntry(s.filename).put(theNewHost, new IndexEntry(s.filename, s.time + 5000, -1));
+                ensureEntry(s.filename).put(theNewHost, new IndexEntry(s.filename, s.time.bumpedForward(), -1));
             }
         }
     }

@@ -18,9 +18,10 @@ import java.io.IOException;
 public class IndexEntry {
     // Filename. Example: "moo/sound1.wav"
     public String filename;
-    public long time, size;
+    public IndexTime time;
+    public long size;
 
-    public IndexEntry(String filename, long l, long sz) {
+    public IndexEntry(String filename, IndexTime l, long sz) {
         this.filename = filename;
         time = l;
         size = sz;
@@ -33,14 +34,14 @@ public class IndexEntry {
             // name is of the form "sound1.wav"
             String name = dis.readUTF();
             filename = versionS.substring(1) + name;
-            time = dis.readLong();
+            time = new IndexTime(dis.readLong());
             size = dis.readLong();
         } else {
             int version = Integer.parseInt(versionS.substring(1));
             versionS = "";
             if (version == 0) {
                 filename = dis.readUTF();
-                time = dis.readLong();
+                time = new IndexTime(dis.readLong());
                 size = dis.readLong();
             } else {
                 throw new IOException("cannot understand version " + version);
@@ -51,7 +52,7 @@ public class IndexEntry {
     public void write(DataOutputStream dos) throws IOException {
         dos.writeUTF("`0");
         dos.writeUTF(filename);
-        dos.writeLong(time);
+        dos.writeLong(time.value);
         dos.writeLong(size);
     }
 }

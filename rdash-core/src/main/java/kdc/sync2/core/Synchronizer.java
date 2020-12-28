@@ -110,18 +110,16 @@ public class Synchronizer {
         IndexEntry groundTruthPF = hosts.values().iterator().next();
         if (groundTruthPF == null)
             throw new RuntimeException("bad index");
-        long ourTime = -1;
-        // This is used 
-        long ourSize = -1;
+        IndexEntry ourEntry = null;
         for (Map.Entry<String, IndexEntry> people : hosts.entrySet()) {
             if (people.getKey().equals(layout.hostname)) {
-                ourTime = people.getValue().time;
-                ourSize = people.getValue().size;
+                ourEntry = people.getValue();
             }
             IndexEntry v = people.getValue();
-            if (v.time > groundTruthPF.time) {
+            int vTimeVsGroundTruthPFTime = v.time.compareTo(groundTruthPF.time);
+            if (vTimeVsGroundTruthPFTime > 0) {
             	groundTruthPF = people.getValue();
-            } else if ((v.time == groundTruthPF.time) && (v.size > groundTruthPF.size)) {
+            } else if ((vTimeVsGroundTruthPFTime == 0) && (v.size > groundTruthPF.size)) {
             	groundTruthPF = people.getValue();
             }
         }
@@ -129,13 +127,8 @@ public class Synchronizer {
         final IndexEntry groundTruth = groundTruthPF;
         groundTruthPF = null;
         
-        if ((ourTime == groundTruth.time) && (ourSize != groundTruth.size)) {
-        	// corruption fallback!
-        	System.err.println("CORRUPTION FALLBACK HAS TRIGGERED FOR EARLY TERMINATION");
-        	System.err.println("(NOTE: If you're getting this at all, it means the situation should recover)");
-        	ourTime = -1;
-        	ourSize = -1;
-        }
+        if ((ourEntry != null) && (ourEntry.time == groundTruth.time) && (ourEntry.size != groundTruth.size))
+            throw new RuntimeException("Path " + path + " may be corrupt. Examine the situation.");
         
         // Find people hosting the latest version.
         // (so we don't end up with >1 person hosting a version, and we know where to look)
@@ -162,7 +155,7 @@ public class Synchronizer {
             	shouldProbablyObliterateOurHostedFile = false;
             }
             if (theUploadedEntry.size == -1) {
-                if (theUploadedEntry.time >= groundTruth.time) {
+                if (theUploadedEntry.time.compareTo(groundTruth.time) >= 0) {
                     // Reliable deletion record always wins.
                     bestHost = people.getKey();
                     break;
@@ -179,7 +172,7 @@ public class Synchronizer {
                 	continue;
                 
                 // 2. Determine that their entry is up-to-date.
-                if (theUploadedEntry.time < groundTruth.time) {
+                if (theUploadedEntry.time.compareTo(groundTruth.time) < 0) {
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote out of date file", serverFile));
                     continue;
                 }
@@ -223,7 +216,7 @@ public class Synchronizer {
         // A. We are out of date
         // B. The file exists and we are up to date, so check if we have a responsibility to forward
         // C. If not A or B, the file is being deleted
-        if (ourTime < groundTruth.time) {
+        if ((ourEntry == null) || (ourEntry.time.compareTo(groundTruth.time) < 0)) {
             // If this fails, we need the file but we can't get it
             if (bestHost != null) {
                 final FSHandle res = layout.getLocalFile(groundTruth);
@@ -285,7 +278,7 @@ public class Synchronizer {
                                 }
                                 layout.setCriticalFlag(null);
                                 temp.delete();
-                                res.setLastModified(newIndex.convertStH(groundTruth.time));
+                                res.setLastModified(groundTruth.time.value);
                                 if (!hosts.containsKey(layout.hostname)) {
                                     hosts.put(layout.hostname, new IndexEntry(groundTruth.filename, groundTruth.time, res.length()));
                                 } else {
@@ -360,7 +353,7 @@ public class Synchronizer {
     }
 
     // existingHosts is the global list of hosts in the world, hosts is the usual host->index for this file, bestDate == lastest version time.
-    public static String getHostUpdate(HashSet<String> existingHosts, HashMap<String, IndexEntry> hosts, long bestDate, boolean mustExist) {
+    public static String getHostUpdate(HashSet<String> existingHosts, HashMap<String, IndexEntry> hosts, IndexTime bestDate, boolean mustExist) {
         LinkedList<String> hss = new LinkedList<String>();
         // If everybody is supposed to have this record, does somebody not have it?
         if (mustExist)
@@ -370,7 +363,7 @@ public class Synchronizer {
                         hss.add(s);
         // Does anyone have an outdated record?
         for (Map.Entry<String, IndexEntry> people : hosts.entrySet())
-            if (people.getValue().time < bestDate)
+            if (people.getValue().time.compareTo(bestDate) < 0)
                 if (!hss.contains(people.getKey()))
                     hss.add(people.getKey());
         if (hss.size() == 0)

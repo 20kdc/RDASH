@@ -6,6 +6,9 @@ package kdc.sync2.fsb;
 public abstract class TimeRFSBackend extends FSBackend {
 
     public static class FileTimeState extends FileState {
+        /**
+         * Unix time in milliseconds.
+         */
         public final long time;
 
         public FileTimeState(long size, long t) {
