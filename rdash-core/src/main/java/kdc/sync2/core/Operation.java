@@ -15,9 +15,6 @@ public interface Operation {
     // Should show at least some feedback immediately on start.
     void execute(OperationFeedback feedback);
 
-    interface OperationFeedback {
-        void showFeedback(String text, double operationProgress);
-    }
     final class GroupOperation implements Operation {
         public final Operation[] group;
         public GroupOperation(Operation[] ops) {

@@ -7,6 +7,7 @@
 package kdc.sync2.se.mdk;
 
 import kdc.sync2.core.Operation;
+import kdc.sync2.core.OperationFeedback;
 import kdc.sync2.se.hmr.*;
 
 import javax.swing.*;
@@ -36,7 +37,7 @@ public class ExecutingOperationState implements HMRState.ResizableHMRState {
         new Thread() {
             @Override
             public void run() {
-                op.execute(new Operation.OperationFeedback() {
+                op.execute(new OperationFeedback() {
                     @Override
                     public void showFeedback(String text, double operationProgress) {
                         status.setText(text);

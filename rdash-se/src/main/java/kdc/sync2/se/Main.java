@@ -7,6 +7,7 @@
 package kdc.sync2.se;
 
 import kdc.sync2.core.Operation;
+import kdc.sync2.core.OperationFeedback;
 import kdc.sync2.core.OperationLists;
 import kdc.sync2.core.ServerLayout;
 import kdc.sync2.core.Synchronizer;
@@ -69,7 +70,7 @@ public class Main {
             String host = new BufferedReader(new InputStreamReader(System.in)).readLine();
             Synchronizer s = new Synchronizer(new ServerLayout(host));
             OperationLists llo = new OperationLists();
-            Operation.OperationFeedback of = new Operation.OperationFeedback() {
+            OperationFeedback of = new OperationFeedback() {
                 @Override
                 public void showFeedback(String text, double operationProgress) {
                     System.out.println("# " + text);
