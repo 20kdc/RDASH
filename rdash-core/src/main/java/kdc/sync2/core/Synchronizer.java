@@ -129,7 +129,7 @@ public class Synchronizer {
         final IndexEntry groundTruth = groundTruthPF;
         groundTruthPF = null;
         
-        if (ourSize != groundTruth.size) {
+        if ((ourTime == groundTruth.time) && (ourSize != groundTruth.size)) {
         	// corruption fallback!
         	System.err.println("CORRUPTION FALLBACK HAS TRIGGERED FOR EARLY TERMINATION");
         	System.err.println("(NOTE: If you're getting this at all, it means the situation should recover)");
