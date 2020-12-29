@@ -16,12 +16,15 @@ import java.awt.event.ActionListener;
  * Created on July 23, 2018.
  */
 public class HMRButton extends JButton {
+    public Runnable callback;
     public HMRButton(final String ok, final Runnable runnable) {
         super(ok);
+        callback = runnable;
         addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                runnable.run();
+        	if (callback != null)
+        	    callback.run();
             }
         });
     }
