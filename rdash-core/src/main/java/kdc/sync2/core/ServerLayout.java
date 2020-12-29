@@ -42,7 +42,7 @@ public class ServerLayout {
         scratch = new RealFSBackend("");
         server = new RealFSBackend("server/");
         server.mkdir("");
-        criticalFlag = new FSHandle(server, "sync2.crit.txt");
+        criticalFlag = new FSHandle(scratch, "sync2.crit.txt");
     }
 
     public void updateServerMirror(OperationFeedback feedback) {
@@ -111,7 +111,7 @@ public class ServerLayout {
             criticalFlag.delete();
         } else {
             try {
-                OutputStream fos = server.openWrite("sync2.crit.txt");
+                OutputStream fos = criticalFlag.openWrite();
                 PrintStream ps = new PrintStream(fos, false, "UTF-8");
                 ps.println(flag);
                 ps.close();

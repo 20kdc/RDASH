@@ -275,8 +275,7 @@ public class Synchronizer {
                                 try {
                                     temp.copy(res);
                                 } catch (Exception ioe) {
-                                    System.exit(1);
-                                    return;
+                                    throw new DangerousFailureRuntimeException("Failed to perform final copy. The local working space is corrupt. Do not continue.", ioe);
                                 }
                                 layout.setCriticalFlag(null);
                                 temp.delete();
