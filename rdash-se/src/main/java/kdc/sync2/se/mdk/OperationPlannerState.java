@@ -33,8 +33,7 @@ public class OperationPlannerState implements HMRState.ResizableHMRState {
     public Container createUI() {
         JTabbedPane jtp = new JTabbedPane();
         for (String s : operations.stages) {
-            // shouldn't need to be direction 3 but Swing is being stupid, as always
-            HMRScrollLayout svl = new HMRScrollLayout(3);
+            HMRScrollLayout svl = new HMRScrollLayout(1);
             for (final Operation o : operations.getStage(s)) {
                 final boolean alreadyDisabled = disable.contains(o);
                 final HMRButton btn = new HMRButton(alreadyDisabled ? "OFF" : "ON", null);
