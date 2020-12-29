@@ -6,18 +6,22 @@
 
 package kdc.sync2.core;
 
-import java.io.File;
-
 import kdc.sync2.fsb.FSHandle;
 
 /**
  * Created on July 23, 2018.
  */
-public interface Operation {
-    // Should show at least some feedback immediately on start.
-    void execute(OperationFeedback feedback);
+public abstract class Operation {
+    public boolean isEssential() {
+        return false;
+    }
 
-    final class GroupOperation implements Operation {
+    public abstract String explain();
+
+    // Should show at least some feedback immediately on start.
+    public abstract void execute(OperationFeedback feedback);
+
+    public static abstract class GroupOperation extends Operation {
         public final Operation[] group;
         public GroupOperation(Operation[] ops) {
             group = ops;
@@ -38,7 +42,7 @@ public interface Operation {
             }
         }
     }
-    final class WasteTimeOperation implements Operation {
+    public static abstract class WasteTimeOperation extends Operation {
         @Override
         public String toString() {
             return "Play W.A. Music";
@@ -57,7 +61,7 @@ public interface Operation {
         }
     }
 
-    final class DeleteFileOperation implements Operation {
+    public static abstract class DeleteFileOperation extends Operation {
         final String string;
         final FSHandle target;
         public DeleteFileOperation(String why, FSHandle shouldBe) {

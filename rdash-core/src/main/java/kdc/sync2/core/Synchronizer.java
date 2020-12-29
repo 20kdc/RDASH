@@ -66,6 +66,11 @@ public class Synchronizer {
         existingHosts.add(layout.hostname);
         return new Operation() {
             @Override
+            public String explain() {
+                return "The synchronization state must be determined before synchronization can occur.";
+            }
+
+            @Override
             public void execute(OperationFeedback feedback) {
                 feedback.showFeedback("Reading & cleaning server...", 0);
                 layout.updateServerMirror(feedback);
@@ -88,6 +93,16 @@ public class Synchronizer {
                     }
 
                     @Override
+                    public boolean isEssential() {
+                        return true;
+                    }
+
+                    @Override
+                    public String explain() {
+                        return "This alerts other computers to newly uploaded files or to files your computer is missing. It is not recommended to disable this - doing so can, in rare circumstances, cause corruption.";
+                    }
+
+                    @Override
                     public void execute(OperationFeedback feedback) {
                         try {
                             theDatabase.pourSubIndexToFile(layout.hostname, layout.getIndex(layout.hostname));
@@ -100,7 +115,7 @@ public class Synchronizer {
         };
     }
 
-    private LinkedList<String> getValidHosts(final IndexEntry oldEntry, final String path, OperationLists actuallyPerform, final HashMap<String, IndexEntry> hosts, final IndexEntry groundTruth) {
+    private LinkedList<String> getValidHosts(final IndexEntry oldEntry, final String path, OperationLists actuallyPerform, final HashMap<String, IndexEntry> hosts, final IndexEntry groundTruth, final String groundTruthHost) {
         // Find people hosting the latest version.
         // (so we don't end up with >1 person hosting a version, and we know where to look)
         final LinkedList<String> validHosts = new LinkedList<>();
@@ -114,38 +129,50 @@ public class Synchronizer {
             //  and the currently running synchronizer is for the computer that changed it,
             //  as otherwise the file won't get properly updated on the server,
             //  because the server one's of the same size and the new index wouldn't contradict timing.
-            IndexEntry theUploadedEntry = people.getValue();
+            IndexEntry theUploadedEntryPF = people.getValue();
 
             if (people.getKey().equals(layout.hostname)) {
-                theUploadedEntry = oldEntry;
-                if (theUploadedEntry == null)
+                theUploadedEntryPF = oldEntry;
+                if (theUploadedEntryPF == null)
                     continue;
                 // If we got here, we're using the full algorithm, so no obliteration
                 shouldProbablyObliterateOurHostedFile = false;
             }
+
+            final IndexEntry theUploadedEntry = theUploadedEntryPF;
             if (theUploadedEntry.size == -1) {
                 // Deletion record! Nothing to do here.
                 continue;
             } else {
                 // This person says they have the file, but it could be old, their uploaded copy could be corrupt,
                 //  or some other stuff could be going on.
-                
+
                 FSHandle serverFile = layout.getFile(people.getKey(), theUploadedEntry);
                 XState serverState = layout.getFileState(people.getKey(), theUploadedEntry);
-                
+
                 // 1. Determine that they're even hosting something that looks like the file.
                 if (serverState == null)
                     continue;
-                
+
                 // 2. Determine that their entry is up-to-date.
                 if (theUploadedEntry.time.compareTo(groundTruth.time) < 0) {
-                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote out of date file", serverFile));
+                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote out of date file", serverFile) {
+                        @Override
+                        public String explain() {
+                            return "Host " + people.getKey() + " has a time of " + theUploadedEntry.time.value + ". Ground truth (" + groundTruthHost + ")";
+                        }
+                    });
                     continue;
                 }
                 
                 // 3. Determine that their entry matches their serverside file in type.
                 if (!(serverState instanceof FileState)) {
-                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote conflicting non-file", serverFile));
+                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote conflicting non-file", serverFile) {
+                        @Override
+                        public String explain() {
+                            return "Host " + people.getKey() + " says they're hosting a file, but they're actually hosting: " + serverState;
+                        }
+                    });
                     continue;
                 }
                 FileState serverFileState = (FileState) serverState;
@@ -156,7 +183,12 @@ public class Synchronizer {
                 //  something very bad happened.
                 if (serverFileState.size != groundTruth.size) {
                     // Note that this also triggers if the upload is out-of-date.
-                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file with bad size", serverFile));
+                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file with bad size", serverFile) {
+                        @Override
+                        public String explain() {
+                            return "Host " + people.getKey() + " has a time of " + theUploadedEntry.time.value + ". Ground truth (" + groundTruthHost + ")";
+                        }
+                    });
                     continue;
                 }
 
@@ -170,7 +202,12 @@ public class Synchronizer {
                 if (layout.getFileState(layout.hostname, groundTruth) != null) {
                     // If we're hosting a file we don't have locally, get rid of it.
                     FSHandle serverFile = layout.getFile(layout.hostname, groundTruth);
-                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file without local copy", serverFile));
+                    actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file without local copy", serverFile) {
+                        @Override
+                        public String explain() {
+                            return "Our host is hosting the file even though it has no entry.";
+                        }
+                    });
                 }
             }
         }
@@ -182,30 +219,32 @@ public class Synchronizer {
         // First, do we need to update? If so, we do NOT want to upload, no matter what.
         // Also note that groundTruth is set to the winner if one exists,
         // so that deletion metadata sticks.
-        IndexEntry groundTruthPF = hosts.values().iterator().next();
+        Map.Entry<String, IndexEntry> groundTruthPF = hosts.entrySet().iterator().next();
         if (groundTruthPF == null)
             throw new RuntimeException("bad index");
-        IndexEntry ourEntry = null;
+        IndexEntry ourEntryPF = null;
         for (Map.Entry<String, IndexEntry> people : hosts.entrySet()) {
             if (people.getKey().equals(layout.hostname)) {
-                ourEntry = people.getValue();
+                ourEntryPF = people.getValue();
             }
             IndexEntry v = people.getValue();
-            int vTimeVsGroundTruthPFTime = v.time.compareTo(groundTruthPF.time);
+            int vTimeVsGroundTruthPFTime = v.time.compareTo(groundTruthPF.getValue().time);
             if (vTimeVsGroundTruthPFTime > 0) {
-            	groundTruthPF = people.getValue();
-            } else if ((vTimeVsGroundTruthPFTime == 0) && (v.size > groundTruthPF.size)) {
-            	groundTruthPF = people.getValue();
+            	groundTruthPF = people;
+            } else if ((vTimeVsGroundTruthPFTime == 0) && (v.size > groundTruthPF.getValue().size)) {
+            	groundTruthPF = people;
             }
         }
         // -- Ground Truth determined --
-        final IndexEntry groundTruth = groundTruthPF;
+        final IndexEntry groundTruth = groundTruthPF.getValue();
+        final String groundTruthHost = groundTruthPF.getKey();
         groundTruthPF = null;
+        final IndexEntry ourEntry = ourEntryPF;
         
         if ((ourEntry != null) && (ourEntry.time == groundTruth.time) && (ourEntry.size != groundTruth.size))
             throw new RuntimeException("Path " + path + " may be corrupt. Examine the situation.");
         
-        final LinkedList<String> validHosts = getValidHosts(oldEntry, path, actuallyPerform, hosts, groundTruth);
+        final LinkedList<String> validHosts = getValidHosts(oldEntry, path, actuallyPerform, hosts, groundTruth, groundTruthHost);
         // Note that bestHost cannot be us. This is used in an attempt to detect bad uploads.
         // (Unless there's a deletion record involved.)
         String bestHostPF = null;
@@ -233,6 +272,11 @@ public class Synchronizer {
                             }
 
                             @Override
+                            public String explain() {
+                                return explainGeneral(hosts, groundTruthHost);
+                            }
+
+                            @Override
                             public void execute(OperationFeedback feedback) {
                                 res.delete();
                                 hosts.remove(layout.hostname);
@@ -252,6 +296,11 @@ public class Synchronizer {
                             @Override
                             public String toString() {
                                 return "Download " + bestHost + " " + path;
+                            }
+
+                            @Override
+                            public String explain() {
+                                return explainGeneral(hosts, groundTruthHost);
                             }
 
                             @Override
@@ -304,6 +353,11 @@ public class Synchronizer {
                             }
 
                             @Override
+                            public String explain() {
+                                return explainGeneral(hosts, groundTruthHost);
+                            }
+
+                            @Override
                             public void execute(OperationFeedback feedback) {
                                 if (failedToUploadAFile)
                                     return;
@@ -335,6 +389,11 @@ public class Synchronizer {
                     }
 
                     @Override
+                    public String explain() {
+                        return explainGeneral(hosts, groundTruthHost);
+                    }
+
+                    @Override
                     public void execute(OperationFeedback feedback) {
                         for (String host : validHosts)
                             layout.getFile(host, groundTruth).delete();
@@ -351,6 +410,14 @@ public class Synchronizer {
             if (hostUpdate == null)
                 hosts.remove(layout.hostname);
         }
+    }
+
+    public static String explainGeneral(HashMap<String, IndexEntry> hosts, String groundTruthHost) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Ground truth: " + groundTruthHost + "\n");
+        for (Map.Entry<String, IndexEntry> ent : hosts.entrySet())
+            sb.append(ent.getKey() + ": size = " + ent.getValue().size + ", time = " + ent.getValue().time + "\n");
+        return sb.toString();
     }
 
     // existingHosts is the global list of hosts in the world, hosts is the usual host->index for this file, bestDate == latest version time.

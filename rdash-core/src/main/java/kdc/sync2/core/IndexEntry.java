@@ -34,7 +34,8 @@ public class IndexEntry {
             // name is of the form "sound1.wav"
             String name = dis.readUTF();
             filename = versionS.substring(1) + name;
-            time = new IndexTime(dis.readLong());
+            // index time was based on this exact unit, do not change
+            time = new IndexTime(dis.readLong() * 15000);
             size = dis.readLong();
         } else {
             int version = Integer.parseInt(versionS.substring(1));

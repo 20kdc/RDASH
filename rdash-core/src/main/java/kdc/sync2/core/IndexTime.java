@@ -15,6 +15,11 @@ public final class IndexTime implements Comparable<IndexTime> {
         value = v;
     }
 
+    @Override
+    public String toString() {
+        return "T+" + value;
+    }
+
     /**
      * Bumps a time forward. This is used to try to cancel out deletion records.
      */

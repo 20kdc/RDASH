@@ -36,20 +36,26 @@ public class OperationPlannerState implements HMRState.ResizableHMRState {
             HMRScrollLayout svl = new HMRScrollLayout(1);
             for (final Operation o : operations.getStage(s)) {
                 final boolean alreadyDisabled = disable.contains(o);
+                final HMRButton btnX = new HMRButton("?", () -> {
+                    JOptionPane.showMessageDialog(frame, o.explain(), o.toString(), JOptionPane.OK_OPTION);
+                });
                 final HMRButton btn = new HMRButton(alreadyDisabled ? "OFF" : "ON", null);
-                btn.callback = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (disable.contains(o)) {
-                            disable.remove(o);
-                            btn.setText("ON");
-                        } else {
-                            disable.add(o);
-                            btn.setText("OFF");
+                btn.callback = () -> {
+                    if (o.isEssential()) {
+                        if (JOptionPane.showConfirmDialog(frame, "This operation is considered essential. Disabling it may cause corruption. Are you sure?", o.toString(), JOptionPane.YES_NO_OPTION) == JOptionPane.NO_OPTION) {
+                            return;
                         }
                     }
+                    if (disable.contains(o)) {
+                        disable.remove(o);
+                        btn.setText("ON");
+                    } else {
+                        disable.add(o);
+                        btn.setText("OFF");
+                    }
                 };
-                svl.addPanel(new HMRSplitterLayout(new HMRLabel(o.toString()), btn, false, 1));
+                HMRSplitterLayout actions = new HMRSplitterLayout(btnX, btn, false, 1);
+                svl.addPanel(new HMRSplitterLayout(new HMRLabel(o.toString()), actions, false, 1));
             }
             jtp.addTab(s, svl);
         }
@@ -61,7 +67,12 @@ public class OperationPlannerState implements HMRState.ResizableHMRState {
                     for (Operation o : operations.getStage(s))
                         if (!disable.contains(o))
                             finOps.add(o);
-                frame.reset(new ExecutingOperationState(frame, new Operation.GroupOperation(finOps.toArray(new Operation[0])), onEndState));
+                frame.reset(new ExecutingOperationState(frame, new Operation.GroupOperation(finOps.toArray(new Operation[0])) {
+                    @Override
+                    public String explain() {
+                        return "Running the planned operations.";
+                    }
+                }, onEndState));
             }
         }), true, 1d);
     }
