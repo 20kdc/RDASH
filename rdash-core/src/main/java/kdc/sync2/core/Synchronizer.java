@@ -141,7 +141,8 @@ public class Synchronizer {
 
             final IndexEntry theUploadedEntry = theUploadedEntryPF;
             if (theUploadedEntry.size == -1) {
-                // Deletion record! Nothing to do here.
+                // Deletion record, anybody's valid if they say they are
+                validHosts.add(people.getKey());
                 continue;
             } else {
                 // This person says they have the file, but it could be old, their uploaded copy could be corrupt,
@@ -283,7 +284,7 @@ public class Synchronizer {
                             }
                         });
                     }
-                } else  {
+                } else {
                     final FSHandle hostedFile = layout.getFile(bestHost, groundTruth);
                     // Keep in mind that bestDate and bestGet are linked, but NOT bestHost.
                     // Technically this should all be correct anyway,

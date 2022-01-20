@@ -11,7 +11,7 @@
       <src path="rdash-core/src/main/java"/>
       <src path="rdash-se/src/main/java"/>
     </javac>
-    <jar jarfile="RDASH.jar" basedir="build"/>
+    <jar jarfile="RDASH.jar" basedir="build" manifest="MANIFEST.MF"/>
   </target>
 </project>
 

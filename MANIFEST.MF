@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Main-Class: kdc.sync2.se.Main
+
