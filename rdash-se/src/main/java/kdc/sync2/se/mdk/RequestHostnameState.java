@@ -23,9 +23,9 @@ import java.util.LinkedList;
  */
 public class RequestHostnameState implements HMRState {
     public HMRFrame frame;
-    public boolean noHost;
-    public RequestHostnameState(HMRFrame f, boolean nh) {
-        frame = f; noHost = nh;
+    public boolean noHost, assumeCompleteNetwork;
+    public RequestHostnameState(HMRFrame f, boolean nh, boolean acn) {
+        frame = f; noHost = nh; assumeCompleteNetwork = acn;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class RequestHostnameState implements HMRState {
                 		final ServerLayout theServ = new ServerLayout(tf.getText());
                     	final Synchronizer theSync = new Synchronizer(theServ);
                     	final OperationLists ol = new OperationLists();
-                    	frame.reset(new ExecutingOperationState(frame, theSync.prepareSync(noHost, ol), new OperationPlannerState(frame, ol, RequestHostnameState.this)));
+                    	frame.reset(new ExecutingOperationState(frame, theSync.prepareSync(noHost, assumeCompleteNetwork, ol), new OperationPlannerState(frame, ol, RequestHostnameState.this)));
                 	} catch (Exception e) {
                         frame.startDialog(e.toString());
                 	}

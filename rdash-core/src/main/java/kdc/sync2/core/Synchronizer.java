@@ -29,7 +29,7 @@ public class Synchronizer {
         layout = l;
     }
 
-    public Operation prepareSync(final boolean noHost, final OperationLists preparedLists) {
+    public Operation prepareSync(final boolean noHost, final boolean assumeCompleteNetwork, final OperationLists preparedLists) {
         String critical = layout.getCriticalFlag();
         if (critical != null)
             throw new RuntimeException("SANITY CHECK : Pre-sync checks show that file " + critical + " is in an uncertain state due to sync failure.");
@@ -81,7 +81,7 @@ public class Synchronizer {
                 for (int i = 0; i < d.length; i++) {
                     feedback.showFeedback("Checking " + d[i], i / (double) d.length);
                     try {
-                        negotiateFile(theDatabase.entries.get(d[i]), theOldDatabase.ensureEntry(d[i]).get(layout.hostname), existingHosts, d[i], preparedLists, noHost);
+                        negotiateFile(theDatabase.entries.get(d[i]), theOldDatabase.ensureEntry(d[i]).get(layout.hostname), existingHosts, d[i], preparedLists, noHost, assumeCompleteNetwork);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -215,7 +215,7 @@ public class Synchronizer {
     }
 
     // Note: the old index is used to indicate time/date of what's been uploaded already.
-    private void negotiateFile(final HashMap<String, IndexEntry> hosts, final IndexEntry oldEntry, HashSet<String> existingHosts, final String path, OperationLists actuallyPerform, boolean noHost) throws IOException {
+    private void negotiateFile(final HashMap<String, IndexEntry> hosts, final IndexEntry oldEntry, HashSet<String> existingHosts, final String path, OperationLists actuallyPerform, boolean noHost, boolean assumeCompleteNetwork) throws IOException {
         // First, do we need to update? If so, we do NOT want to upload, no matter what.
         // Also note that groundTruth is set to the winner if one exists,
         // so that deletion metadata sticks.
@@ -404,11 +404,14 @@ public class Synchronizer {
         } else {
             // So, the file's been deleted, and we know it.
             // Does anyone else need to know?
-            // (note - if they don't have it in their index, it doesn't matter.
-            //  this also prevents circles of update-deletion-records, followed by purges.)
-            String hostUpdate = getHostUpdate(existingHosts, hosts, groundTruth.time, false);
-            if (hostUpdate == null)
-                hosts.remove(layout.hostname);
+            if (assumeCompleteNetwork) {
+                // Note - if they don't have it in their index, it doesn't matter.
+                //  this also prevents circles of update-deletion-records, followed by purges.
+                // assumeCompleteNetwork has to be checked because on incomplete networks removing deletion records will cause trouble.
+                String hostUpdate = getHostUpdate(existingHosts, hosts, groundTruth.time, false);
+                if (hostUpdate == null)
+                    hosts.remove(layout.hostname);
+            }
         }
     }
 

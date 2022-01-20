@@ -36,6 +36,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         int syncMode = 0;
         boolean noHost = false;
+        boolean assumeCompleteNetwork = false;
         for (String a : args) {
             // Accept some common "help" syntax.
             if (a.equalsIgnoreCase("help") || a.equalsIgnoreCase("--help") || a.equalsIgnoreCase("-h") || a.equalsIgnoreCase("-?") || a.equalsIgnoreCase("/?")) {
@@ -47,6 +48,8 @@ public class Main {
                 return;
             } else if (a.equalsIgnoreCase("noHost")) {
                 noHost = true;
+            } else if (a.equalsIgnoreCase("assumeCompleteNetwork")) {
+                assumeCompleteNetwork = true;
             } else if (a.equalsIgnoreCase("standard")) {
                 syncMode = 1;
             } else if (a.equalsIgnoreCase("gui")) {
@@ -77,7 +80,7 @@ public class Main {
                     System.out.println(operationProgress * 100);
                 }
             };
-            s.prepareSync(noHost, llo).execute(of);
+            s.prepareSync(noHost, assumeCompleteNetwork, llo).execute(of);
             for (String st : llo.stages)
                 new Operation.GroupOperation(llo.getStage(st).toArray(new Operation[0])) {
         		public String explain() {
@@ -86,7 +89,7 @@ public class Main {
             	}.execute(of);
         } else if (syncMode == 2) {
             HMRFrame frame = new HMRFrame();
-            frame.reset(new RequestHostnameState(frame, noHost));
+            frame.reset(new RequestHostnameState(frame, noHost, assumeCompleteNetwork));
         } else {
             System.err.println("Unrecognized synchronization mode, internal error.");
         }
