@@ -160,7 +160,10 @@ public class Synchronizer {
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote out of date file", serverFile) {
                         @Override
                         public String explain() {
-                            return "Host " + people.getKey() + " has a time of " + theUploadedEntry.time.value + ". Ground truth (" + groundTruthHost + ")";
+                            StringBuilder explanation = new StringBuilder();
+                            explanation.append(explainGeneral(hosts, groundTruthHost));
+                            explanation.append("\nCause: Host " + people.getKey() + " has a time of " + theUploadedEntry.time + " vs. GT " + groundTruth.time);
+                            return explanation.toString();
                         }
                     });
                     continue;
@@ -171,12 +174,15 @@ public class Synchronizer {
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote conflicting non-file", serverFile) {
                         @Override
                         public String explain() {
-                            return "Host " + people.getKey() + " says they're hosting a file, but they're actually hosting: " + serverState;
+                            StringBuilder explanation = new StringBuilder();
+                            explanation.append(explainGeneral(hosts, groundTruthHost));
+                            explanation.append("\nCause: Host " + people.getKey() + " says they're hosting a file, but they're actually hosting: " + serverState);
+                            return explanation.toString();
                         }
                     });
                     continue;
                 }
-                FileState serverFileState = (FileState) serverState;
+                final FileState serverFileState = (FileState) serverState;
 
                 // 4. And in size.
                 // Compare against GROUND TRUTH
@@ -187,7 +193,10 @@ public class Synchronizer {
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file with bad size", serverFile) {
                         @Override
                         public String explain() {
-                            return "Host " + people.getKey() + " has a time of " + theUploadedEntry.time.value + ". Ground truth (" + groundTruthHost + ")";
+                            StringBuilder explanation = new StringBuilder();
+                            explanation.append(explainGeneral(hosts, groundTruthHost));
+                            explanation.append("\nCause: " + people.getKey() + " hostfile size is " + serverFileState.size + " vs. GT " + groundTruth.size);
+                            return explanation.toString();
                         }
                     });
                     continue;
@@ -206,7 +215,10 @@ public class Synchronizer {
                     actuallyPerform.correct.add(new Operation.DeleteFileOperation("remote file without local copy", serverFile) {
                         @Override
                         public String explain() {
-                            return "Our host is hosting the file even though it has no entry.";
+                            StringBuilder explanation = new StringBuilder();
+                            explanation.append(explainGeneral(hosts, groundTruthHost));
+                            explanation.append("\nCause: Our host is hosting the file even though it has no entry.");
+                            return explanation.toString();
                         }
                     });
                 }
@@ -220,27 +232,10 @@ public class Synchronizer {
         // First, do we need to update? If so, we do NOT want to upload, no matter what.
         // Also note that groundTruth is set to the winner if one exists,
         // so that deletion metadata sticks.
-        Map.Entry<String, IndexEntry> groundTruthPF = hosts.entrySet().iterator().next();
-        if (groundTruthPF == null)
-            throw new RuntimeException("bad index");
-        IndexEntry ourEntryPF = null;
-        for (Map.Entry<String, IndexEntry> people : hosts.entrySet()) {
-            if (people.getKey().equals(layout.hostname)) {
-                ourEntryPF = people.getValue();
-            }
-            IndexEntry v = people.getValue();
-            int vTimeVsGroundTruthPFTime = v.time.compareTo(groundTruthPF.getValue().time);
-            if (vTimeVsGroundTruthPFTime > 0) {
-            	groundTruthPF = people;
-            } else if ((vTimeVsGroundTruthPFTime == 0) && (v.size > groundTruthPF.getValue().size)) {
-            	groundTruthPF = people;
-            }
-        }
+        final IndexEntry ourEntry = hosts.get(layout.hostname);
+        final String groundTruthHost = getGroundTruth(hosts, ourEntry);
         // -- Ground Truth determined --
-        final IndexEntry groundTruth = groundTruthPF.getValue();
-        final String groundTruthHost = groundTruthPF.getKey();
-        groundTruthPF = null;
-        final IndexEntry ourEntry = ourEntryPF;
+        final IndexEntry groundTruth = hosts.get(groundTruthHost);
         
         if ((ourEntry != null) && (ourEntry.time == groundTruth.time) && (ourEntry.size != groundTruth.size))
             throw new RuntimeException("Path " + path + " may be corrupt. Examine the situation.");
@@ -330,11 +325,7 @@ public class Synchronizer {
                                 layout.setCriticalFlag(null);
                                 temp.delete();
                                 res.setLastModified(groundTruth.time.value);
-                                if (!hosts.containsKey(layout.hostname)) {
-                                    hosts.put(layout.hostname, new IndexEntry(groundTruth.filename, groundTruth.time, res.length()));
-                                } else {
-                                    hosts.get(layout.hostname).time = groundTruth.time;
-                                }
+                                hosts.put(layout.hostname, new IndexEntry(groundTruth.filename, groundTruth.time, res.length()));
                             }
                         });
                     }
@@ -414,6 +405,35 @@ public class Synchronizer {
                     hosts.remove(layout.hostname);
             }
         }
+    }
+
+    /**
+     * Determines ground truth host.
+     */
+    private String getGroundTruth(final HashMap<String, IndexEntry> hosts, IndexEntry ourEntry) {
+        Map.Entry<String, IndexEntry> groundTruthPF = hosts.entrySet().iterator().next();
+        if (groundTruthPF == null)
+            throw new RuntimeException("bad index");
+        for (Map.Entry<String, IndexEntry> people : hosts.entrySet()) {
+            IndexEntry v = people.getValue();
+            IndexEntry presentGT = groundTruthPF.getValue();
+            int vTimeVsGroundTruthPFTime = v.time.compareTo(presentGT.time);
+            // time is the most major factor
+            if (vTimeVsGroundTruthPFTime > 0) {
+                groundTruthPF = people;
+            } else if (vTimeVsGroundTruthPFTime == 0) {
+                // in case of a time conflict, biggest size wins
+                if (v.size > presentGT.size) {
+                    groundTruthPF = people;
+                } else if (v.size == presentGT.size) {
+                    // all else being equal, we're ground truth
+                    if (ourEntry == v)
+                        groundTruthPF = people;
+                }
+            }
+        }
+        // -- Ground Truth determined --
+        return groundTruthPF.getKey();
     }
 
     public static String explainGeneral(HashMap<String, IndexEntry> hosts, String groundTruthHost) {
