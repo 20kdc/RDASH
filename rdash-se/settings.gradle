@@ -1,3 +1,0 @@
-include ":rdash-core"
-project(":rdash-core").projectDir = file("../rdash-core")
-

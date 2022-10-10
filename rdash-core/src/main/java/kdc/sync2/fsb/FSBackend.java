@@ -85,11 +85,17 @@ public abstract class FSBackend {
      * Note that this has no protection against interruption.
      */
     public void copy(String fileNameSource, FSBackend target, String fileNameTarget) throws IOException {
-        InputStream inp = openRead(fileNameSource);
-        OutputStream outp = target.openWrite(fileNameTarget);
-        inp.transferTo(outp);
-        outp.close();
-        inp.close();
+        try (InputStream inp = openRead(fileNameSource)) {
+            try (OutputStream outp = target.openWrite(fileNameTarget)) {
+                byte[] buffer = new byte[0x1000000];
+                while (true) {
+                    int a = inp.read(buffer);
+                    if (a <= 0)
+                        break;
+                    outp.write(buffer, 0, a);
+                }
+            }
+        }
     }
 
     /**

@@ -1,7 +1,8 @@
 /build
 */.classpath
-*/.project
-*/.settings
+.project
+.settings
 */.gradle
 */build
 RDASH.jar
+
