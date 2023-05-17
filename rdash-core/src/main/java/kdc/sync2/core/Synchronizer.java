@@ -286,7 +286,7 @@ public class Synchronizer {
                     //  but let's try and keep consistency with the entry we say we're downloading,
                     //  even if it's wrong.
                     long correctSize = hosts.get(bestHost).size;
-                    if (hostedFile.length() == correctSize) {
+                    if (hostedFile.exists() && hostedFile.length() == correctSize) {
                         actuallyPerform.download.add(new Operation() {
 
                             @Override
