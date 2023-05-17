@@ -34,12 +34,36 @@ public class OperationPlannerState implements HMRState.ResizableHMRState {
         JTabbedPane jtp = new JTabbedPane();
         for (String s : operations.stages) {
             HMRScrollLayout svl = new HMRScrollLayout(1);
+            LinkedList<Runnable> refreshers = new LinkedList<>();
+            final HMRButton btnAllOff = new HMRButton("ALL OFF", () -> {
+                for (final Operation o : operations.getStage(s)) {
+                    if (o.isEssential())
+                        continue;
+                    disable.add(o);
+                }
+                for (final Runnable r : refreshers)
+                    r.run();
+            });
+            final HMRButton btnAllOn = new HMRButton("ALL ON", () -> {
+                for (final Operation o : operations.getStage(s))
+                    disable.remove(o);
+                for (final Runnable r : refreshers)
+                    r.run();
+            });
+            svl.addPanel(new HMRSplitterLayout(btnAllOff, btnAllOn, false, 0.5f));
             for (final Operation o : operations.getStage(s)) {
                 final boolean alreadyDisabled = disable.contains(o);
                 final HMRButton btnX = new HMRButton("?", () -> {
                     JOptionPane.showMessageDialog(frame, o.explain(), o.toString(), JOptionPane.OK_OPTION);
                 });
                 final HMRButton btn = new HMRButton(alreadyDisabled ? "OFF" : "ON", null);
+                refreshers.add(() -> {
+                    if (disable.contains(o)) {
+                        btn.setText("OFF");
+                    } else {
+                        btn.setText("ON");
+                    }
+                });
                 btn.callback = () -> {
                     if (o.isEssential()) {
                         if (JOptionPane.showConfirmDialog(frame, "This operation is considered essential. Disabling it may cause corruption. Are you sure?", o.toString(), JOptionPane.YES_NO_OPTION) == JOptionPane.NO_OPTION) {
