@@ -1,4 +1,22 @@
-#Resource Distribution And Synchronization Helper
+# Before Touching This, A Warning
+
+This software has, throughout its history, been prone to many weird bugs. Worse, they keep happening. Most common seems to be a bug where deletions silently fail and are not properly propagated. I have no idea why.
+
+Renaming files also causes problems since it has to reupload *any* renamed file.
+
+I'm not sure if I can understand the cause of these issues. Among other things, the many-to-many sync layout and support for filesystems with abnormal update-time granularity has made the code extremely confusing.
+
+If I recall correctly, the biggest problem is that RDASH does not properly enforce a consistent world state.
+
+I've since moved onto a toolset I call `era3-sync`, which is located in my 'scrapheap' repository in the infrastructure section.
+
+That toolset focuses much more on an observable, modular, principled design, which should help to prevent any issues like this.
+
+Certainly, I don't have anything against someone trying to continue this project. It's one of the crowning jewels of what I personally call "Era 2".
+
+But like many things from that era, for me, it's time to put it down, and walk away, because it's not what's right for me. \- 20kdc
+
+# Resource Distribution And Synchronization Helper
 
 I couldn't find a way to specify 'files' using the letter 'D'.
 
