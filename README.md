@@ -4,7 +4,7 @@ This software has, throughout its history, been prone to many weird bugs. Worse,
 
 Renaming files also causes problems since it has to reupload *any* renamed file.
 
-I'm not sure if I can understand the cause of these issues. Among other things, the many-to-many sync layout and support for filesystems with abnormal update-time granularity has made the code extremely confusing.
+I'm not sure if I can understand the cause of the 'stuck file' (deletion not properly propagated) issues. Among other things, the many-to-many sync layout and support for filesystems with abnormal update-time granularity has made the code extremely confusing.
 
 If I recall correctly, the biggest problem is that RDASH does not properly enforce a consistent world state.
 
